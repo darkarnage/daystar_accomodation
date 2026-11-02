@@ -1,0 +1,27 @@
+services:
+  db:
+    image: mysql:8.0
+    container_name: daystar-db
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${DB_NAME}
+      MYSQL_USER: ${DB_USER}          # limited user: only this database
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+    ports:
+      - "127.0.0.1:${DB_PORT}:3306"   # localhost only, not reachable from the network
+    volumes:
+      - daystar_db_data:/var/lib/mysql
+      # Runs once, on first start with an empty volume
+      - ./db/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    healthcheck:
+      # -h 127.0.0.1 forces TCP: the temporary init server has no TCP port,
+      # so this only passes once the real server is ready.
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-uroot", "-p${DB_ROOT_PASSWORD}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+volumes:
+  daystar_db_data:
