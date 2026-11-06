@@ -3,46 +3,73 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Browse listings · CampusNest</title>
+  <link rel="icon" href="/assets/icons/favicon.svg" type="image/svg+xml">
+  <title>Browse accommodation · CampusNest</title>
   <link rel="stylesheet" href="/assets/css/main.css">
 </head>
 <body>
 <a class="skip" href="#main">Skip to content</a>
 <header id="site-header"></header>
 <main id="main" class="wrap">
+  <div class="page-head">
+    <h1>Browse accommodation</h1>
+    <p class="muted">Approved student rooms near Daystar University, Athi River.</p>
+  </div>
+
+  <div class="browse-bar">
+    <div class="input-icon"><span id="ico-search"></span>
+      <input class="input" id="q" name="q" form="filters" type="search" placeholder="Search by area or keyword" aria-label="Search by area or keyword"></div>
+    <button class="btn btn-secondary filter-toggle" id="toggle-filters" type="button" aria-controls="filters" aria-expanded="false"><span id="ico-filter"></span>Filters</button>
+    <div class="sort">
+      <label for="sort">Sort by</label>
+      <select id="sort">
+        <option value="">Newest</option><option value="rent">Rent: low to high</option><option value="distance">Closest to campus</option>
+      </select>
+    </div>
+  </div>
+  <div class="chips" id="chips" aria-label="Active filters"></div>
+
   <div class="browse">
-    <form class="filters panel" id="filters" aria-label="Filters">
-      <h2>Filters</h2>
-      <div class="field"><label for="q">Search</label><input id="q" name="q" type="search" placeholder="Area or keyword"></div>
-      <div class="field"><label for="type">Room type</label>
-        <select id="type" name="type">
-          <option value="">Any</option>
-          <option value="single">Single room</option><option value="bedsit">Bedsit</option>
-          <option value="one_bedroom">One bedroom</option><option value="shared">Shared room</option><option value="hostel">Hostel</option>
-        </select></div>
-      <div class="field"><label for="maxRent">Max rent (KES)</label><input id="maxRent" name="maxRent" type="number" min="0" step="500" placeholder="e.g. 8000"></div>
-      <div class="field"><label for="maxDist">Max distance (km)</label>
-        <select id="maxDist" name="maxDist"><option value="">Any</option><option>1</option><option>2</option><option>5</option><option>10</option></select></div>
-      <fieldset class="field" style="border:0;padding:0;margin:0 0 .8rem"><legend><b>Amenities</b></legend><div class="checks" id="amenity-checks" style="grid-template-columns:1fr"></div></fieldset>
-      <label style="font-weight:400;display:flex;gap:.4rem;margin-bottom:1rem"><input type="checkbox" name="hideTaken" id="hideTaken"> Hide taken rooms</label>
-      <button class="btn btn-ghost btn-sm" type="reset" id="clear">Clear filters</button>
+    <form class="filters" id="filters" aria-label="Filters">
+      <div class="filters-head">
+        <h2>Filters</h2>
+        <button class="menu-close close" type="button" id="close-filters" aria-label="Close filters"><span id="ico-close"></span></button>
+      </div>
+      <div class="filters-body">
+        <fieldset>
+          <legend>Room and budget</legend>
+          <div class="field"><label for="type">Room type</label>
+            <select id="type" name="type">
+              <option value="">Any</option>
+              <option value="single">Single room</option><option value="bedsit">Bedsit</option>
+              <option value="one_bedroom">One bedroom</option><option value="shared">Shared room</option><option value="hostel">Hostel</option>
+            </select></div>
+          <div class="field"><label for="maxRent">Max rent per month (KES)</label><input id="maxRent" name="maxRent" type="number" min="0" step="500" inputmode="numeric" placeholder="e.g. 8000"></div>
+        </fieldset>
+        <fieldset class="group">
+          <legend>Distance</legend>
+          <div class="field"><label for="maxDist">Max distance to campus</label>
+            <select id="maxDist" name="maxDist"><option value="">Any distance</option><option value="1">Within 1 km</option><option value="2">Within 2 km</option><option value="5">Within 5 km</option><option value="10">Within 10 km</option></select></div>
+        </fieldset>
+        <fieldset class="group">
+          <legend>Amenities</legend>
+          <div class="checks" id="amenity-checks"></div>
+        </fieldset>
+        <button class="btn btn-quiet btn-sm" type="reset" id="clear">Clear all filters</button>
+      </div>
+      <div class="filters-foot">
+        <button class="btn btn-secondary" type="reset" id="clear-sheet">Clear</button>
+        <button class="btn" type="button" id="apply">Show results</button>
+      </div>
     </form>
 
-    <section aria-live="polite">
-      <div class="results-head">
-        <div><h1 style="font-size:1.6rem;margin:0">Browse listings</h1><p class="muted" id="count" style="margin:0"></p></div>
-        <div style="display:flex;gap:.5rem;align-items:center">
-          <button class="btn btn-ghost btn-sm filter-toggle" id="toggle-filters" type="button">Filters</button>
-          <label for="sort" class="muted" style="margin:0">Sort</label>
-          <select id="sort" style="padding:.4rem;border-radius:8px;border:1px solid var(--line)">
-            <option value="">Newest</option><option value="rent">Rent: low to high</option><option value="distance">Closest to campus</option>
-          </select>
-        </div>
-      </div>
+    <section aria-label="Results">
+      <p class="results-count" id="count" aria-live="polite"></p>
       <div class="grid" id="results"></div>
     </section>
   </div>
 </main>
+<div class="scrim" id="filter-scrim" hidden></div>
 <footer id="site-footer"></footer>
 <script src="/assets/js/main.js"></script>
 <script src="/assets/js/browse.js"></script>

@@ -12,12 +12,12 @@ function setErr(form, name, text) {
 function finish(form, user) {
   write('cn_user', user);
   const next = safeNext(new URLSearchParams(location.search).get('next'));
-  location.href = next === '/' && user.role === 'admin' ? '/admin/dashboard.html'
-    : next === '/' && user.role === 'landlord' ? '/my-listings.html' : next;
+  location.href = next === '/' && user.role === 'admin' ? '/admin/dashboard.html' : next;
 }
 function lookup(email) {
   const e = email.toLowerCase();
-  return [...Object.values(DEMO_USERS), ...read('cn_users', [])].find(u => u.email.toLowerCase() === e);
+  // Registered accounts are students (older saved landlord accounts are ignored).
+  return [...Object.values(DEMO_USERS), ...read('cn_users', []).filter(u => u.role === 'student')].find(u => u.email.toLowerCase() === e);
 }
 
 const msg = new URLSearchParams(location.search).get('msg');
@@ -28,6 +28,7 @@ $$('[data-demo]').forEach(b => b.addEventListener('click', () => {
   const f = $('form');
   f.elements.email.value = DEMO_USERS[b.dataset.demo].email;
   f.elements.password.value = 'demo-password';
+  b.classList.add('is-loading');
   f.requestSubmit();
 }));
 
@@ -66,7 +67,7 @@ $('#register-form')?.addEventListener('submit', e => {
   if (!ok) return;
   // Demo only: the password is never stored.
   const users = read('cn_users', []);
-  const user = { id: 100 + users.length, name: v('name'), email: v('email'), phone: v('phone'), role: f.elements.role.value };
+  const user = { id: 100 + users.length, name: v('name'), email: v('email'), phone: v('phone'), role: 'student' };
   write('cn_users', [...users, user]);
   finish(f, user);
 });

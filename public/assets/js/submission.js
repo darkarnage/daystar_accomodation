@@ -1,30 +1,17 @@
-// Landlord form to add or edit a listing. Demo: saves to localStorage with status "pending".
+// Public property submission form. Demo: saves to localStorage with status "pending" (no account needed).
 const form = $('#listing-form');
-const user = getUser();
-const editId = Number(new URLSearchParams(location.search).get('edit')) || 0;
-const existing = editId ? getListings().find(l => l.id === editId && l.landlordId === user?.id) : null;
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const PHONE_RE = /^(\+254|0)[17]\d{2}[\s-]?\d{3}[\s-]?\d{3}$/;
 
-$('#amenities').innerHTML = AMENITIES.map(a => `<label><input type="checkbox" name="amenity" value="${esc(a)}"> ${esc(a)}</label>`).join('');
+$('#ico-camera').outerHTML = icon('camera', 28);
+$('#done-icon').innerHTML = icon('checkCircle', 30);
+$('#amenities').innerHTML = AMENITIES.map(a => `<label class="check"><input type="checkbox" name="amenity" value="${esc(a)}"> ${esc(a)}</label>`).join('');
 
 function setErr(name, text) {
   const field = form.elements[name].closest('.field');
   field.classList.toggle('invalid', !!text);
   $('.err', field).textContent = text || '';
   return !text;
-}
-
-if (user?.role !== 'landlord') {
-  $('#gate').hidden = false;
-} else {
-  form.hidden = false;
-  if (existing) {   // editing: pre-fill, and warn that it goes back to pending
-    $('#page-title').textContent = 'Edit listing';
-    ['title', 'roomType', 'rent', 'distance', 'location', 'description', 'availability'].forEach(k => form.elements[k].value = existing[k]);
-    existing.amenities.forEach(a => { const b = $(`[name=amenity][value="${CSS.escape(a)}"]`); if (b) b.checked = true; });
-    form.insertAdjacentHTML('afterbegin', '<div class="alert">Saving your changes sends the listing back to <b>pending</b> for approval.</div>');
-  } else if (editId) {
-    form.hidden = true; $('#gate').hidden = false; $('#gate').innerHTML = '<p>That listing was not found, or it is not yours.</p><a class="btn" href="/my-listings.html">My listings</a>';
-  }
 }
 
 // Photo checks + preview (images are not uploaded in demo mode)
@@ -34,7 +21,7 @@ $('#photos').addEventListener('change', e => {
     : files.find(f => !['image/jpeg', 'image/png'].includes(f.type)) ? 'Only JPG or PNG files are allowed.'
     : files.find(f => f.size > 2 * 1024 * 1024) ? 'Each photo must be under 2 MB.' : '';
   setErr('photos', bad);
-  $('#preview').innerHTML = bad ? '' : files.map(f => `<img src="${URL.createObjectURL(f)}" alt="" style="width:90px;border-radius:8px">`).join('');
+  $('#preview').innerHTML = bad ? '' : files.map(f => `<img src="${URL.createObjectURL(f)}" alt="Selected photo preview">`).join('');
 });
 
 form.addEventListener('submit', e => {
@@ -48,19 +35,24 @@ form.addEventListener('submit', e => {
     setErr('distance', v('distance') !== '' && dist >= 0 && dist < 100 ? '' : 'Enter the distance in km (0 to 99.9).'),
     setErr('location', v('location') ? '' : 'Enter the area.'),
     setErr('description', v('description').length >= 20 ? '' : 'Describe the place in at least 20 characters.'),
-    !$('.invalid [name=photos]') ,
+    !$('.invalid [name=photos]'),
+    setErr('contactName', v('contactName').length >= 2 ? '' : 'Enter your name or business name.'),
+    setErr('contactPhone', PHONE_RE.test(v('contactPhone')) ? '' : 'Enter a Kenyan number like 0712 345 678.'),
+    setErr('contactEmail', EMAIL_RE.test(v('contactEmail')) ? '' : 'Enter a valid email address.'),
   ].every(Boolean);
   if (!ok) { $('.invalid input, .invalid select, .invalid textarea')?.focus(); return; }
 
-  const fields = {
+  const listing = {
     title: v('title'), roomType: v('roomType'), rent, distance: dist, location: v('location'),
     description: v('description'), availability: v('availability'),
     amenities: $$('[name=amenity]:checked').map(b => b.value),
-    status: 'pending', rejectionReason: '',          // new or edited listings always go to pending
+    contact: { name: v('contactName'), phone: v('contactPhone'), email: v('contactEmail') },
+    status: 'pending', rejectionReason: '',          // new listings always go to pending
   };
   const all = getListings();
-  if (existing) Object.assign(all.find(l => l.id === existing.id), fields);
-  else all.push({ id: Math.max(0, ...all.map(l => l.id)) + 1, landlordId: user.id, created: new Date().toISOString().slice(0, 10), ...fields });
+  all.push({ id: Math.max(0, ...all.map(l => l.id)) + 1, created: new Date().toISOString().slice(0, 10), ...listing });
   saveListings(all);
   form.hidden = true; $('#done').hidden = false;
+  $('#done-title').textContent = listing.title;
+  scrollTo({ top: 0 });
 });

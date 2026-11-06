@@ -3,27 +3,33 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" href="/assets/icons/favicon.svg" type="image/svg+xml">
   <title>Log in · CampusNest</title>
   <link rel="stylesheet" href="/assets/css/main.css">
-  <link rel="stylesheet" href="/assets/css/auth.css">
 </head>
 <body>
 <a class="skip" href="#main">Skip to content</a>
 <header id="site-header"></header>
-<main id="main">
-  <div class="auth panel">
-    <h1>Log in</h1>
-    <div id="msg"></div>
-    <form id="login-form" novalidate>
-      <div class="field"><label for="email">Email</label><input id="email" name="email" type="email" autocomplete="email"><p class="err"></p></div>
-      <div class="field"><label for="password">Password</label><input id="password" name="password" type="password" autocomplete="current-password"><p class="err"></p></div>
-      <button class="btn" type="submit" style="width:100%">Log in</button>
-    </form>
-    <p class="muted" style="margin-top:1rem">New here? <a href="/register.html">Create an account</a></p>
-    <div class="demo-box">
-      <b>Demo mode</b> – the backend is not connected yet. Use a demo account (any password):
-      <div><button type="button" class="btn btn-ghost btn-sm" data-demo="student">Student</button>
-      <button type="button" class="btn btn-ghost btn-sm" data-demo="landlord">Landlord</button></div>
+<main id="main" class="auth-split">
+  <figure class="auth-photo" style="margin:0">
+    <img src="/assets/images/bedroom-window.jpg" alt="A bedroom with a double bed beside a window" width="1280" height="960">
+    <figcaption>Find a place to call home.<small>Log in to save favourites and see owner contacts.</small></figcaption>
+  </figure>
+  <div class="auth-form">
+    <div class="auth-card">
+      <h1>Log in</h1>
+      <p class="sub">Welcome back. Log in as a student to save listings and contact owners.</p>
+      <div id="msg"></div>
+      <form id="login-form" novalidate>
+        <div class="field"><label for="email">Email</label><input id="email" name="email" type="email" autocomplete="email"><p class="err"></p></div>
+        <div class="field"><label for="password">Password</label><input id="password" name="password" type="password" autocomplete="current-password"><p class="err"></p></div>
+        <button class="btn btn-block" type="submit">Log in</button>
+      </form>
+      <p class="form-foot">New here? <a href="/register.html">Create an account</a></p>
+      <div class="demo-box">
+        <b>Demo mode</b>: the backend is not connected yet. Use the demo student account (any password).
+        <div class="row"><button type="button" class="btn btn-secondary btn-sm" data-demo="student">Log in as demo student</button></div>
+      </div>
     </div>
   </div>
 </main>

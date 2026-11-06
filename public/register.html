@@ -3,29 +3,32 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Sign up · CampusNest</title>
+  <link rel="icon" href="/assets/icons/favicon.svg" type="image/svg+xml">
+  <title>Create account · CampusNest</title>
   <link rel="stylesheet" href="/assets/css/main.css">
-  <link rel="stylesheet" href="/assets/css/auth.css">
 </head>
 <body>
 <a class="skip" href="#main">Skip to content</a>
 <header id="site-header"></header>
-<main id="main">
-  <div class="auth panel">
-    <h1>Create your account</h1>
-    <form id="register-form" novalidate>
-      <fieldset class="roles"><legend>I am a…</legend>
-        <label><input type="radio" name="role" value="student" checked> Student<span class="hint"> – browse and save rooms</span></label>
-        <label><input type="radio" name="role" value="landlord"> Landlord<span class="hint"> – list my property</span></label>
-      </fieldset>
-      <div class="field"><label for="name">Full name</label><input id="name" name="name" autocomplete="name"><p class="err"></p></div>
-      <div class="field"><label for="email">Email</label><input id="email" name="email" type="email" autocomplete="email"><p class="err"></p></div>
-      <div class="field"><label for="phone">Phone <span class="hint">(e.g. 0712 345 678)</span></label><input id="phone" name="phone" type="tel" autocomplete="tel"><p class="err"></p></div>
-      <div class="field"><label for="password">Password <span class="hint">(at least 8 characters)</span></label><input id="password" name="password" type="password" autocomplete="new-password"><p class="err"></p></div>
-      <div class="field"><label for="confirm">Confirm password</label><input id="confirm" name="confirm" type="password" autocomplete="new-password"><p class="err"></p></div>
-      <button class="btn" type="submit" style="width:100%">Sign up</button>
-    </form>
-    <p class="muted" style="margin-top:1rem">Already registered? <a href="/login.html">Log in</a></p>
+<main id="main" class="auth-split">
+  <figure class="auth-photo" style="margin:0">
+    <img src="/assets/images/study-laptop.jpg" alt="A student studying at a desk with a laptop" width="1280" height="960">
+    <figcaption>Your next home is a few searches away.<small>A free student account takes a minute.</small></figcaption>
+  </figure>
+  <div class="auth-form">
+    <div class="auth-card">
+      <h1>Create your student account</h1>
+      <p class="sub">Free. Save favourites and see owners' phone numbers and emails. Property owners don't need an account: <a href="/submit-property.html">list a property</a>.</p>
+      <form id="register-form" novalidate>
+        <div class="field"><label for="name">Full name</label><input id="name" name="name" autocomplete="name"><p class="err"></p></div>
+        <div class="field"><label for="email">Email</label><input id="email" name="email" type="email" autocomplete="email"><p class="err"></p></div>
+        <div class="field"><label for="phone">Phone <span class="hint">(e.g. 0712 345 678)</span></label><input id="phone" name="phone" type="tel" autocomplete="tel"><p class="err"></p></div>
+        <div class="field"><label for="password">Password <span class="hint">(at least 8 characters)</span></label><input id="password" name="password" type="password" autocomplete="new-password"><p class="err"></p></div>
+        <div class="field"><label for="confirm">Confirm password</label><input id="confirm" name="confirm" type="password" autocomplete="new-password"><p class="err"></p></div>
+        <button class="btn btn-block" type="submit">Sign up</button>
+      </form>
+      <p class="form-foot">Already registered? <a href="/login.html">Log in</a></p>
+    </div>
   </div>
 </main>
 <footer id="site-footer"></footer>

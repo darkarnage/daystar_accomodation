@@ -3,28 +3,30 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" href="/assets/icons/favicon.svg" type="image/svg+xml">
   <title>Dashboard · CampusNest Admin</title>
   <link rel="stylesheet" href="/assets/css/main.css">
   <link rel="stylesheet" href="/assets/css/admin.css">
 </head>
-<body data-page="dashboard">
+<body data-page="dashboard" class="admin">
 <a class="skip" href="#main">Skip to content</a>
-<header id="site-header"></header>
-<main id="main" class="wrap">
-  <div class="page-head"><h1>Admin dashboard</h1><p class="muted">Overview of listings and what needs review.</p></div>
-  <div class="stats" id="stats"></div>
-  <div class="row-head"><h2>Waiting for review</h2><a href="/admin/listings.html?status=pending">Open moderation →</a></div>
-  <div id="queue"></div>
-</main>
+<div class="admin-shell">
+  <aside id="admin-side" class="admin-side"></aside>
+  <main id="main" class="admin-main">
+    <div class="admin-head"><div><h1>Dashboard</h1><p class="muted">Overview of listings and what needs review.</p></div></div>
+    <div class="stats" id="stats"></div>
+    <div class="row-head"><h2 style="font-size:1.25rem">Waiting for review</h2><a class="text-link" href="/admin/listings.html?status=pending">Open moderation</a></div>
+    <div id="queue"></div>
+  </main>
+</div>
 <dialog id="reject-dialog">
   <form method="dialog" id="reject-form">
     <h3>Reject listing</h3>
     <p class="muted" id="reject-title"></p>
-    <div class="field"><label for="reason">Reason (the landlord will see this)</label><textarea id="reason" rows="3" maxlength="255"></textarea><p class="err"></p></div>
-    <div style="display:flex;gap:.5rem;justify-content:flex-end"><button class="btn btn-ghost btn-sm" value="cancel" formnovalidate>Cancel</button><button class="btn btn-danger btn-sm" id="reject-ok" value="ok">Reject</button></div>
+    <div class="field"><label for="reason">Reason <span class="hint">(shown with the rejected listing)</span></label><textarea id="reason" rows="3" maxlength="255"></textarea><p class="err"></p></div>
+    <div class="dialog-actions"><button class="btn btn-secondary btn-sm" value="cancel" formnovalidate>Cancel</button><button class="btn btn-danger btn-sm" id="reject-ok" value="ok">Reject listing</button></div>
   </form>
 </dialog>
-<footer id="site-footer"></footer>
 <script src="/assets/js/main.js"></script>
 <script src="/assets/js/admin.js"></script>
 </body>
