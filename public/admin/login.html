@@ -1,1 +1,30 @@
-<!-- Admin login page. -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Admin log in · CampusNest</title>
+  <link rel="stylesheet" href="/assets/css/main.css">
+  <link rel="stylesheet" href="/assets/css/auth.css">
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header id="site-header"></header>
+<main id="main">
+  <div class="auth panel">
+    <h1>Admin log in</h1>
+    <div id="msg"></div>
+    <form id="admin-login-form" novalidate>
+      <div class="field"><label for="email">Admin email</label><input id="email" name="email" type="email" autocomplete="username"><p class="err"></p></div>
+      <div class="field"><label for="password">Password</label><input id="password" name="password" type="password" autocomplete="current-password"><p class="err"></p></div>
+      <button class="btn" type="submit" style="width:100%">Log in</button>
+    </form>
+    <div class="demo-box"><b>Demo mode</b> – use <code>admin@campusnest.test</code> with any password.
+      <div><button type="button" class="btn btn-ghost btn-sm" data-demo="admin">Fill demo admin</button></div></div>
+  </div>
+</main>
+<footer id="site-footer"></footer>
+<script src="/assets/js/main.js"></script>
+<script src="/assets/js/auth.js"></script>
+</body>
+</html>

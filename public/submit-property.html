@@ -1,1 +1,48 @@
-<!-- Landlord property submission form. -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>List a property · CampusNest</title>
+  <link rel="stylesheet" href="/assets/css/main.css">
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header id="site-header"></header>
+<main id="main" class="narrow">
+  <div class="page-head"><h1 id="page-title">List a property</h1>
+    <p class="muted">An admin reviews every new or edited listing before students can see it.</p></div>
+  <div id="gate" class="panel" hidden>
+    <p>Only landlords can list properties.</p>
+    <a class="btn" href="/register.html">Sign up as a landlord</a> <a class="btn btn-ghost" href="/login.html?next=/submit-property.html">Log in</a>
+  </div>
+  <form id="listing-form" class="panel" novalidate hidden>
+    <div class="field"><label for="title">Title</label><input id="title" name="title" maxlength="150" placeholder="e.g. Bright bedsit near Daystar gate"><p class="err"></p></div>
+    <div class="field"><label for="roomType">Room type</label>
+      <select id="roomType" name="roomType"><option value="">Choose…</option>
+        <option value="single">Single room</option><option value="bedsit">Bedsit</option><option value="one_bedroom">One bedroom</option><option value="shared">Shared room</option><option value="hostel">Hostel</option></select><p class="err"></p></div>
+    <div class="cols" style="grid-template-columns:repeat(auto-fit,minmax(180px,1fr))">
+      <div class="field"><label for="rent">Monthly rent (KES)</label><input id="rent" name="rent" type="number" min="1" step="100"><p class="err"></p></div>
+      <div class="field"><label for="distance">Distance to campus (km)</label><input id="distance" name="distance" type="number" min="0" max="99.9" step="0.1"><p class="err"></p></div>
+    </div>
+    <div class="field"><label for="location">Location / area</label><input id="location" name="location" maxlength="150" placeholder="e.g. Mlolongo"><p class="err"></p></div>
+    <div class="field"><label for="description">Description</label><textarea id="description" name="description" rows="5" maxlength="2000"></textarea><p class="err"></p></div>
+    <fieldset class="field" style="border:0;padding:0"><legend><b>Amenities</b></legend><div class="checks" id="amenities"></div></fieldset>
+    <div class="field"><label for="photos">Photos <span class="hint">(up to 5, JPG or PNG, 2 MB each)</span></label><input id="photos" name="photos" type="file" accept="image/jpeg,image/png" multiple><p class="err"></p>
+      <div class="thumbs" id="preview"></div></div>
+    <div class="field"><label for="availability">Availability</label>
+      <select id="availability" name="availability"><option value="available">Available</option><option value="taken">Taken</option></select></div>
+    <button class="btn" type="submit">Submit for approval</button>
+    <a class="btn btn-ghost" href="/my-listings.html">Cancel</a>
+  </form>
+  <div id="done" class="panel" hidden>
+    <h2>Thanks! Your listing is pending</h2>
+    <p>An admin will review it soon. You can follow its status under My listings.</p>
+    <a class="btn" href="/my-listings.html">Go to my listings</a>
+  </div>
+</main>
+<footer id="site-footer"></footer>
+<script src="/assets/js/main.js"></script>
+<script src="/assets/js/submission.js"></script>
+</body>
+</html>

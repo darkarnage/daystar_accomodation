@@ -3,10 +3,66 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Daystar Accommodation Finder</title>
+  <title>CampusNest · Student housing near Daystar University</title>
+  <link rel="stylesheet" href="/assets/css/main.css">
 </head>
 <body>
-  <h1>Daystar Accommodation Finder</h1>
-  <p>Setup works. Home page coming in Phase 3.</p>
+<a class="skip" href="#main">Skip to content</a>
+<header id="site-header"></header>
+<main id="main">
+<section class="hero">
+  <div class="wrap">
+    <h1>Find your home near<br>Daystar University</h1>
+    <p>Browse student rooms, bedsits and hostels around Athi River. Filter by rent and distance to campus.</p>
+    <form class="search-bar" action="/browse.html">
+      <input type="search" name="q" placeholder="Area or keyword, e.g. Mlolongo" aria-label="Search">
+      <select name="type" aria-label="Room type">
+        <option value="">Any room type</option>
+        <option value="single">Single room</option><option value="bedsit">Bedsit</option>
+        <option value="one_bedroom">One bedroom</option><option value="shared">Shared room</option><option value="hostel">Hostel</option>
+      </select>
+      <input type="number" name="maxRent" min="1000" step="500" placeholder="Max rent (KES)" aria-label="Maximum rent">
+      <button class="btn btn-amber" type="submit">Search</button>
+    </form>
+  </div>
+</section>
+
+<section class="section">
+  <div class="wrap">
+    <div class="row-head"><h2>Closest to campus</h2><a href="/browse.html?sort=distance">See all listings →</a></div>
+    <div class="grid" id="featured"></div>
+  </div>
+</section>
+
+<section class="section section-alt">
+  <div class="wrap">
+    <h2>How it works</h2>
+    <div class="cols">
+      <div class="step"><div class="n">1</div><h3>Search</h3><p>Filter by rent, room type, amenities and distance to the Daystar gate.</p></div>
+      <div class="step"><div class="n">2</div><h3>Sign up as a student</h3><p>Free account. Save favourites and see the landlord's phone and email.</p></div>
+      <div class="step"><div class="n">3</div><h3>Call and visit</h3><p>Contact the landlord directly and go see the place before you pay.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="wrap panel" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem">
+    <div><h2>Own a property near campus?</h2><p class="muted" style="margin:0">List it for free. An admin checks every listing before students see it.</p></div>
+    <a class="btn" href="/submit-property.html">List a property</a>
+  </div>
+</section>
+</main>
+<footer id="site-footer"></footer>
+<script src="/assets/js/main.js"></script>
+<script>
+  // Home page: 3 closest approved, available listings.
+  const draw = () => {
+    const best = getListings().filter(l => l.status === 'approved' && l.availability === 'available')
+      .sort((a, b) => a.distance - b.distance).slice(0, 3);
+    $('#featured').innerHTML = best.map(cardHTML).join('');
+  };
+  draw();
+  document.addEventListener('favchange', draw);
+</script>
 </body>
 </html>

@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>My listings · CampusNest</title>
+  <link rel="stylesheet" href="/assets/css/main.css">
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header id="site-header"></header>
+<main id="main" class="wrap">
+  <div class="page-head row-head"><h1>My listings</h1><a class="btn" href="/submit-property.html">+ New listing</a></div>
+  <div class="mylist" id="list"></div>
+</main>
+<footer id="site-footer"></footer>
+<script src="/assets/js/main.js"></script>
+<script>
+  // Landlord's own listings (all statuses), with edit and delete.
+  const me = requireRole('landlord');
+  function draw() {
+    const mine = getListings().filter(l => l.landlordId === me.id);
+    $('#list').innerHTML = mine.length ? mine.map(l => `
+      <div class="item">
+        <img src="${photo(l)}" alt="">
+        <div><h3 style="margin:0"><a href="/property.html?id=${l.id}">${esc(l.title)}</a> ${statusBadge(l.status)}</h3>
+          <p class="muted" style="margin:0">${kes(l.rent)} · ${esc(l.location)} · ${l.availability}</p>
+          ${l.status === 'rejected' ? `<p class="alert alert-error" style="margin:.4rem 0 0">Rejected: ${esc(l.rejectionReason)}</p>` : ''}
+          ${l.status === 'pending' ? '<p class="muted" style="margin:0">Waiting for admin approval</p>' : ''}</div>
+        <div class="actions"><a class="btn btn-ghost btn-sm" href="/submit-property.html?edit=${l.id}">Edit</a>
+          <button class="btn btn-danger btn-sm" data-del="${l.id}">Delete</button></div>
+      </div>`).join('') :
+      '<div class="state"><h3>You have no listings yet</h3><a class="btn" href="/submit-property.html">List your first property</a></div>';
+  }
+  $('#list').addEventListener('click', e => {
+    const id = Number(e.target.dataset.del);
+    if (id && confirm('Delete this listing? This cannot be undone.')) {
+      saveListings(getListings().filter(l => l.id !== id)); draw(); toast('Listing deleted');
+    }
+  });
+  if (me) draw();
+</script>
+</body>
+</html>

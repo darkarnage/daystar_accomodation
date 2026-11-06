@@ -1,1 +1,32 @@
-<!-- Admin listings moderation: approve or reject pending listings. -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Moderate listings · CampusNest Admin</title>
+  <link rel="stylesheet" href="/assets/css/main.css">
+  <link rel="stylesheet" href="/assets/css/admin.css">
+</head>
+<body data-page="listings">
+<a class="skip" href="#main">Skip to content</a>
+<header id="site-header"></header>
+<main id="main" class="wrap">
+  <div class="page-head"><h1>Moderate listings</h1></div>
+  <div class="tabs" id="tabs" role="tablist">
+    <button data-s="" class="on">All</button><button data-s="pending">Pending</button><button data-s="approved">Approved</button><button data-s="rejected">Rejected</button>
+  </div>
+  <div id="table"></div>
+</main>
+<dialog id="reject-dialog">
+  <form method="dialog" id="reject-form">
+    <h3>Reject listing</h3>
+    <p class="muted" id="reject-title"></p>
+    <div class="field"><label for="reason">Reason (the landlord will see this)</label><textarea id="reason" rows="3" maxlength="255"></textarea><p class="err"></p></div>
+    <div style="display:flex;gap:.5rem;justify-content:flex-end"><button class="btn btn-ghost btn-sm" value="cancel" formnovalidate>Cancel</button><button class="btn btn-danger btn-sm" id="reject-ok" value="ok">Reject</button></div>
+  </form>
+</dialog>
+<footer id="site-footer"></footer>
+<script src="/assets/js/main.js"></script>
+<script src="/assets/js/admin.js"></script>
+</body>
+</html>
