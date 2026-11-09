@@ -42,6 +42,16 @@ async function seedListings() {
   }
 }
 
+// A demo student so the "Log in as demo student" button works. Development only: never created in production.
+async function seedDemoStudent() {
+  if (process.env.NODE_ENV === 'production') return;
+  const hash = await bcrypt.hash('demo-password', 12);
+  const [r] = await pool.query(
+    `INSERT IGNORE INTO users (name, email, password_hash, phone, role)
+     VALUES ('Faith Wanjiru', 'faith@student.daystar.ac.ke', ?, '0700 000 001', 'student')`, [hash]);
+  console.log(`Demo student ${r.affectedRows ? 'created' : 'already exists'}: faith@student.daystar.ac.ke (password: demo-password)`);
+}
+
 async function main() {
   const { ADMIN_NAME, ADMIN_EMAIL, ADMIN_PASSWORD } = process.env;
   if (!ADMIN_EMAIL || !ADMIN_PASSWORD || ADMIN_PASSWORD.length < 8) {
@@ -60,6 +70,7 @@ async function main() {
     [ADMIN_NAME || 'Site Admin', ADMIN_EMAIL.toLowerCase(), hash]
   );
   await seedListings();
+  await seedDemoStudent();
   console.log(`Amenities ready. Admin ${r.affectedRows ? 'created' : 'already exists'}: ${ADMIN_EMAIL}`);
 }
 

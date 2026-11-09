@@ -1,6 +1,6 @@
-// Controller: public listing search and details (stage 2). Favourites come in a later stage.
+// Controller: listing search and details (public) and owner contact (students only). Favourites come in a later stage.
 // Public rule: only listings that are approved AND available are ever returned.
-// Owner contact (contact_name/phone/email) is deliberately never selected here.
+// Owner contact (contact_name/phone/email) is only selected by the protected contact endpoint at the bottom.
 const pool = require('../db');
 
 const ROOM_TYPES = ['single', 'bedsit', 'one_bedroom', 'shared', 'hostel'];
@@ -107,6 +107,23 @@ exports.details = async (req, res) => {
     res.json((await toJson(rows))[0]);
   } catch (err) {
     console.error('GET /api/listings/:id failed:', err.message);
+    res.status(500).json({ error: 'Something went wrong. Please try again.' });
+  }
+};
+
+// GET /api/listings/:id/contact  (students only: the route uses requireRole('student'))
+// The only place owner contact details leave the server.
+exports.contact = async (req, res) => {
+  if (!/^\d+$/.test(req.params.id)) return res.status(400).json({ error: 'id must be a whole number.' });
+  try {
+    const [rows] = await pool.query(
+      `SELECT contact_name, contact_phone, contact_email FROM listings l WHERE l.id = ? AND ${PUBLIC_ONLY}`,
+      [Number(req.params.id)]);
+    if (!rows.length) return res.status(404).json({ error: 'Listing not found.' });
+    res.set('Cache-Control', 'no-store');   // never keep contact details in a shared cache
+    res.json({ name: rows[0].contact_name, phone: rows[0].contact_phone, email: rows[0].contact_email });
+  } catch (err) {
+    console.error('GET /api/listings/:id/contact failed:', err.message);
     res.status(500).json({ error: 'Something went wrong. Please try again.' });
   }
 };

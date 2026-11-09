@@ -19,7 +19,16 @@ app.get('/api/health', async (req, res) => {
   }
 });
 
+// Every /api request knows who is logged in (req.user), then the routes decide what that user may do.
+app.use('/api', require('./middleware/auth.middleware').attachUser);
+app.use('/api/auth', require('./routes/auth.routes'));
 app.use('/api/listings', require('./routes/listings.routes'));
+
+// Broken JSON in a request body gets a clean 400 instead of an HTML error page.
+app.use((err, req, res, next) => {
+  if (err.type === 'entity.parse.failed') return res.status(400).json({ error: 'Request body must be valid JSON.' });
+  next(err);
+});
 
 const port = process.env.PORT || 3000;
 app.listen(port, () => console.log(`http://localhost:${port}`));

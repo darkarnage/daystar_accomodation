@@ -14,6 +14,7 @@ Student (browse, favourites, sees owner contact), Admin (approves/rejects listin
 - Normal database search/filtering must work on its own. Gemini natural-language search is an optional extra, added last.
 - Public pages show only `approved` listings that are `available`. Taken, pending and rejected listings are hidden from public pages (admins can still see them). New submissions go to `pending`.
 - The owner contact (name/phone/email on the listing) is visible only to logged-in students, and the API must not return it to anyone else.
+- Login: random token in an HttpOnly, SameSite=Lax cookie; only its SHA-256 hash is stored (`sessions` table). Passwords are bcrypt hashes. Protect routes with `requireRole(...)`; the frontend's saved `cn_user` is only a display copy, the server decides access.
 - Validate input on every API endpoint (plain checks, no validation library).
 - SQL: always `?` placeholders, never string-built queries.
 - Deleting a listing (admin): DB rows cascade, but image files do not. Read `file_path` from `listing_images` first, delete rows, then `fs.unlink` each file.

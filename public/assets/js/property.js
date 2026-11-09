@@ -1,10 +1,12 @@
 // Property page. The listing comes from GET /api/listings/:id, which only returns approved + available listings
 // and never includes the owner's contact details.
-// Contact details are still read from the localStorage demo data for logged-in students (until the auth stage).
+// Owner contact comes from GET /api/listings/:id/contact, which only answers to a logged-in student (session cookie).
 // Admins can preview non-public listings from the localStorage demo data (until the admin stage).
 const id = Number(new URLSearchParams(location.search).get('id'));
 const user = getUser();
 const view = $('#view');
+// If the server shows the login state is different from what this page started with, reload so the contact card is right.
+document.addEventListener('sessionchange', () => location.reload(), { once: true });
 view.innerHTML = '<div class="state" style="margin:var(--s7) 0"><p class="muted">Loading…</p></div>';
 
 const notFound = () => {
@@ -21,33 +23,50 @@ const notFound = () => {
       <p class="muted">Check your connection and try again.</p><button class="btn" type="button" onclick="location.reload()">Try again</button></div>`;
     return;
   }
-  const local = getListings().find(x => x.id === id);
-  if (!l && user?.role === 'admin' && local) l = local;   // admin preview
+  if (!l && user?.role === 'admin') l = getListings().find(x => x.id === id);   // admin preview
   if (!l) return notFound();
-  show(l, local);
+  show(l, user?.role === 'student' ? await loadContact(l) : null);
 })();
 
-function show(l, local) {
+// Ask the server for the owner's contact details. The answer is { state: 'ok', owner }, 'login' (not logged in
+// as a student, e.g. the session ended), 'unavailable' or 'error'.
+async function loadContact(l) {
+  try {
+    const res = await fetch(`/api/listings/${l.id}/contact`);
+    if (res.ok) return { state: 'ok', owner: await res.json() };
+    if (res.status === 401 || res.status === 403) return { state: 'login' };
+    if (res.status === 404) return { state: 'unavailable' };
+  } catch { /* network problem */ }
+  return { state: 'error' };
+}
+
+// The student's contact answer is passed in; everyone else gets the right message or login prompt.
+function show(l, contactResult) {
 
   document.title = l.title + ' · CampusNest';
-  const owner = listingContact(local || {});
   const here = encodeURIComponent(location.pathname + location.search);
   const photos = photosOf(l);
   const available = l.availability === 'available';
 
   // Contact card: details for students, a login prompt for everyone else.
+  const loginPrompt = `<div class="contact-gate"><div class="lock">${icon('lock', 18)}<span>Log in as a student to see the owner's phone and email.</span></div>
+      <a class="btn btn-block" href="/login.html?next=${here}">Log in</a>
+      <a class="btn btn-secondary btn-block" href="/register.html">Create a free account</a></div>`;
   let contact;
-  if (user?.role === 'student') {
+  if (contactResult?.state === 'ok') {
+    const owner = contactResult.owner;
     contact = `<p><b>${esc(owner.name)}</b></p>
       <p class="contact-line">${icon('phone', 18)}<a href="tel:${esc(owner.phone.replace(/\s/g, ''))}">${esc(owner.phone)}</a></p>
       <p class="contact-line">${icon('mail', 18)}<a href="mailto:${esc(owner.email)}">${esc(owner.email)}</a></p>
       <p class="muted small">Mention CampusNest when you call.</p>`;
-  } else if (user) {
-    contact = `<div class="contact-gate"><div class="lock">${icon('lock', 18)}<span>Contact details are shown to logged-in students only.</span></div></div>`;
+  } else if (contactResult?.state === 'unavailable') {
+    contact = '<p class="muted">Contact details are not available for this listing.</p>';
+  } else if (contactResult?.state === 'error') {
+    contact = '<p class="muted">Could not load the contact details.</p><button class="btn btn-secondary btn-sm" type="button" onclick="location.reload()">Try again</button>';
+  } else if (user) {   // an admin (or a session that just ended): not a student
+    contact = user.role === 'student' ? loginPrompt : `<div class="contact-gate"><div class="lock">${icon('lock', 18)}<span>Contact details are shown to logged-in students only.</span></div></div>`;
   } else {
-    contact = `<div class="contact-gate"><div class="lock">${icon('lock', 18)}<span>Log in as a student to see the owner's phone and email.</span></div>
-      <a class="btn btn-block" href="/login.html?next=${here}">Log in</a>
-      <a class="btn btn-secondary btn-block" href="/register.html">Create a free account</a></div>`;
+    contact = loginPrompt;
   }
 
   // Admin/preview banner for listings that are not public.

@@ -72,3 +72,17 @@ CREATE TABLE favourites (
   CONSTRAINT fk_fav_listing FOREIGN KEY (listing_id)
     REFERENCES listings (id) ON DELETE CASCADE
 ) ENGINE=InnoDB;
+
+-- Login sessions. The cookie holds a random token; only its SHA-256 hash is stored here,
+-- so a leaked database cannot be used to log in. Logging out deletes the row.
+CREATE TABLE sessions (
+  token_hash CHAR(64) NOT NULL,
+  user_id    INT UNSIGNED NOT NULL,
+  expires_at DATETIME NOT NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (token_hash),
+  KEY idx_sessions_user (user_id),
+  KEY idx_sessions_expires (expires_at),
+  CONSTRAINT fk_sessions_user FOREIGN KEY (user_id)
+    REFERENCES users (id) ON DELETE CASCADE
+) ENGINE=InnoDB;

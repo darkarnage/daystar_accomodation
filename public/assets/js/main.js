@@ -52,11 +52,14 @@ function getListings() {
   return all;
 }
 const saveListings = all => write('cn_listings', all);
-// Only students and the admin can log in (there are no landlord accounts).
+// The logged-in user. For students, cn_user is only a saved copy of what the server says (see syncSession below):
+// the server session cookie is what really counts. The admin is still a localStorage demo until the admin stage.
 const getUser = () => { const u = read('cn_user', null); return u && ['student', 'admin'].includes(u.role) ? u : null; };
 const getFavs = () => read('cn_favs', []);
-function logout() { localStorage.removeItem('cn_user'); location.href = '/'; }
-function resetDemo() { ['cn_listings', 'cn_user', 'cn_favs'].forEach(k => localStorage.removeItem(k)); location.href = '/'; }
+// Logging out ends the server session (students) and clears the saved copy of the user.
+async function endSession() { try { await fetch('/api/auth/logout', { method: 'POST' }); } catch { /* server offline: still log out here */ } }
+async function logout() { await endSession(); localStorage.removeItem('cn_user'); location.href = '/'; }
+async function resetDemo() { await endSession(); ['cn_listings', 'cn_user', 'cn_favs'].forEach(k => localStorage.removeItem(k)); location.href = '/'; }
 
 // Contact details for a listing: the ones typed into the submission form, or the demo owner's.
 const listingContact = l => l.contact || LANDLORDS[l.landlordId] || { name: 'Property owner', phone: '', email: '' };
@@ -319,6 +322,8 @@ document.addEventListener('click', e => {
 
 // Guard for pages that need a role. Returns the user, or redirects.
 function requireRole(...roles) {
+  // If the server later says the session is gone, leave the page.
+  document.addEventListener('sessionchange', () => { if (!roles.includes(getUser()?.role)) requireRole(...roles); }, { once: true });
   const u = getUser();
   if (!u || !roles.includes(u.role)) {
     const admin = roles.includes('admin');
@@ -328,4 +333,21 @@ function requireRole(...roles) {
   return u;
 }
 
+// The page first shows the saved user (no flicker), then asks the server who is really logged in.
+// If they differ, update the saved copy and redraw the header. The demo admin is left alone.
+async function syncSession() {
+  try {
+    const res = await fetch('/api/auth/me');
+    if (!res.ok) return;
+    const server = (await res.json()).user;
+    const saved = getUser();
+    if (saved?.role === 'admin') return;
+    if (JSON.stringify(server) === JSON.stringify(saved)) return;
+    if (server) write('cn_user', server); else localStorage.removeItem('cn_user');
+    renderChrome();
+    document.dispatchEvent(new Event('sessionchange'));
+  } catch { /* server offline: keep showing the saved user */ }
+}
+
 renderChrome();
+syncSession();
