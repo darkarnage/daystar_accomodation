@@ -1,20 +1,38 @@
-// Property page: shows one listing. The public sees approved + available listings only.
-// Landlord phone/email are shown to logged-in students only. Admins can preview any listing.
+// Property page. The listing comes from GET /api/listings/:id, which only returns approved + available listings
+// and never includes the owner's contact details.
+// Contact details are still read from the localStorage demo data for logged-in students (until the auth stage).
+// Admins can preview non-public listings from the localStorage demo data (until the admin stage).
 const id = Number(new URLSearchParams(location.search).get('id'));
-const l = getListings().find(x => x.id === id);
 const user = getUser();
 const view = $('#view');
+view.innerHTML = '<div class="state" style="margin:var(--s7) 0"><p class="muted">Loading…</p></div>';
 
-const canPreview = user?.role === 'admin';
-
-if (!l || (!isPublic(l) && !canPreview)) {
+const notFound = () => {
   view.innerHTML = `<div class="state" style="margin:var(--s7) 0">${icon('home', 32)}<h2>Listing not found</h2>
     <p class="muted">It may have been removed, or it is not available right now.</p><a class="btn" href="/browse.html">Back to browse</a></div>`;
-} else {
+};
+
+(async () => {
+  let l;
+  try {
+    l = Number.isInteger(id) && id > 0 ? await apiGet('/api/listings/' + id) : null;
+  } catch {
+    view.innerHTML = `<div class="state" style="margin:var(--s7) 0">${icon('close', 32)}<h2>Could not load this listing</h2>
+      <p class="muted">Check your connection and try again.</p><button class="btn" type="button" onclick="location.reload()">Try again</button></div>`;
+    return;
+  }
+  const local = getListings().find(x => x.id === id);
+  if (!l && user?.role === 'admin' && local) l = local;   // admin preview
+  if (!l) return notFound();
+  show(l, local);
+})();
+
+function show(l, local) {
+
   document.title = l.title + ' · CampusNest';
-  const owner = listingContact(l);
+  const owner = listingContact(local || {});
   const here = encodeURIComponent(location.pathname + location.search);
-  const keys = photosOf(l);
+  const photos = photosOf(l);
   const available = l.availability === 'available';
 
   // Contact card: details for students, a login prompt for everyone else.
@@ -38,12 +56,12 @@ if (!l || (!isPublic(l) && !canPreview)) {
      ${l.status === 'rejected' ? esc(l.rejectionReason) : l.status === 'pending' ? 'Waiting for admin approval.' : ''}</span></div>`;
 
   // Gallery: one big photo plus a mosaic. Missing photos get a calm placeholder.
-  const gallery = keys.length
-    ? `<div class="gallery" id="gallery" data-n="${keys.length}">
-        ${keys.map((k, i) => `<a href="${imgUrl(k)}" data-i="${i}" aria-label="Open photo ${i + 1} of ${keys.length}"><img src="${imgUrl(k, i > 0)}" alt="${esc(IMAGES[k].alt)}" width="${i ? 640 : 1280}" height="${i ? 480 : 960}" ${i ? 'loading="lazy"' : ''}></a>`).join('')}
-        ${keys.length > 1 ? `<button class="btn btn-sm gallery-all" type="button" data-i="0">${icon('camera', 16)}View all ${keys.length} photos</button>` : ''}
+  const gallery = photos.length
+    ? `<div class="gallery" id="gallery" data-n="${photos.length}">
+        ${photos.map((p, i) => `<a href="${p.full}" data-i="${i}" aria-label="Open photo ${i + 1} of ${photos.length}"><img src="${i ? p.small : p.full}" alt="${esc(p.alt)}" width="${i ? 640 : 1280}" height="${i ? 480 : 960}" ${i ? 'loading="lazy"' : ''}></a>`).join('')}
+        ${photos.length > 1 ? `<button class="btn btn-sm gallery-all" type="button" data-i="0">${icon('camera', 16)}View all ${photos.length} photos</button>` : ''}
       </div>
-      <p class="gallery-note">Sample photographs for demonstration. They do not show the actual property.</p>`
+      ${photos.some(p => p.sample) ? '<p class="gallery-note">Sample photographs for demonstration. They do not show the actual property.</p>' : ''}`
     : `<div class="gallery" data-n="1"><div class="ph">${LOGO_MARK}<span>The owner has not added photos yet</span></div></div>`;
 
   const facts = [
@@ -96,14 +114,14 @@ if (!l || (!isPublic(l) && !canPreview)) {
   if (user && user.role !== 'student') favBtn.hidden = true;   // only students have favourites
 
   // Photo viewer.
-  if (keys.length) {
+  if (photos.length) {
     const box = $('#lightbox'), img = $('#lb-img');
     let at = 0;
     $('#lb-close').innerHTML = icon('close', 22); $('#lb-prev').innerHTML = icon('left', 22); $('#lb-next').innerHTML = icon('right', 22);
     const show = n => {
-      at = (n + keys.length) % keys.length;
-      img.src = imgUrl(keys[at]); img.alt = IMAGES[keys[at]].alt;
-      $('#lb-count').textContent = `Photo ${at + 1} of ${keys.length}`;
+      at = (n + photos.length) % photos.length;
+      img.src = photos[at].full; img.alt = photos[at].alt;
+      $('#lb-count').textContent = `Photo ${at + 1} of ${photos.length}`;
     };
     $('#gallery').addEventListener('click', e => {
       const t = e.target.closest('[data-i]');

@@ -19,5 +19,7 @@ app.get('/api/health', async (req, res) => {
   }
 });
 
+app.use('/api/listings', require('./routes/listings.routes'));
+
 const port = process.env.PORT || 3000;
 app.listen(port, () => console.log(`http://localhost:${port}`));

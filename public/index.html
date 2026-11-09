@@ -101,15 +101,18 @@
     ['shield', 'Safety first', 'Visit before you pay, and never send a deposit to someone you have not met.'],
   ].map(([i, t, d]) => `<li><span class="ico">${icon(i, 20)}</span><div><b>${t}</b><span>${d}</span></div></li>`).join('');
 
-  // Featured: the 3 closest approved, available listings. One big card and two smaller ones.
-  const draw = () => {
-    const best = getListings().filter(isPublic).sort((a, b) => a.distance - b.distance).slice(0, 3);
-    $('#featured').innerHTML = best.length
+  // Featured: the 3 closest approved, available listings, from the API (sorted and limited in SQL).
+  // One big card and two smaller ones.
+  const featured = $('#featured');
+  featured.innerHTML = '<div class="card card-skel"></div><div class="feature-side"><div class="card card-skel"></div><div class="card card-skel"></div></div>';
+  apiGet('/api/listings?sort=distance&limit=3').then(data => {
+    const best = data.listings;
+    featured.innerHTML = best.length
       ? cardHTML(best[0], 'card-feature') + `<div class="feature-side">${best.slice(1).map(l => cardHTML(l, 'card-row')).join('')}</div>`
       : '<div class="state"><h3>No listings yet</h3><p class="muted">Check back soon.</p></div>';
-  };
-  draw();
-  document.addEventListener('favchange', draw);
+  }).catch(() => {
+    featured.innerHTML = `<div class="state">${icon('close', 32)}<h3>Could not load listings</h3><p class="muted">Check your connection and try again.</p><button class="btn btn-secondary" type="button" onclick="location.reload()">Try again</button></div>`;
+  });
 </script>
 </body>
 </html>

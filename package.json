@@ -10,7 +10,8 @@
     "db:up": "docker compose up -d --wait",
     "db:down": "docker compose down",
     "db:reset": "docker compose down -v && docker compose up -d --wait && npm run seed",
-    "seed": "node db/seed.js"
+    "seed": "node db/seed.js",
+    "test": "node --test"
   },
   "dependencies": {
     "bcrypt": "^6.0.0",

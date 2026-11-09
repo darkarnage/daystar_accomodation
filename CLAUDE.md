@@ -21,7 +21,7 @@ Student (browse, favourites, sees owner contact), Admin (approves/rejects listin
 - MySQL is bound to `127.0.0.1:3308` only.
 
 ## Commands
-`npm run db:up` / `db:down` / `db:reset`, `npm run seed`, `npm run dev` (http://localhost:3000).
+`npm run db:up` / `db:down` / `db:reset`, `npm run seed`, `npm run dev` (http://localhost:3000), `npm test` (API checks; needs the server and database running).
 
 ## Layout
 See `SCAFFOLD.md`. Designs from Google Stitch go in `design/` and are the reference for the frontend.

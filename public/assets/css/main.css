@@ -454,3 +454,8 @@ input[type=checkbox], input[type=radio] { accent-color: var(--forest); width: 1.
 
 /* ---------- utilities ---------- */
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+/* loading placeholder cards (browse and home while the API answers) */
+.card-skel { min-height: 320px; background: linear-gradient(90deg, var(--stone) 25%, #EEEAE0 50%, var(--stone) 75%); background-size: 300% 100%; animation: shimmer 1.4s linear infinite; border-color: var(--stone); }
+.feature-side .card-skel { min-height: 150px; }
+@keyframes shimmer { to { background-position: -300% 0; } }

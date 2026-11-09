@@ -175,14 +175,33 @@ const LISTING_PHOTOS = {
   12: ['bunk-plain', 'kitchen-wood'],
   13: ['living-leather-sofa', 'living-bright', 'kitchen-dining-modern'],
 };
-const photosOf = l => LISTING_PHOTOS[l.id] || [];
-const imgUrl = (key, small) => `/assets/images/${key}${small ? '-sm' : ''}.jpg`;
+const imgUrl = (key, small) => `/assets/images/${key}${small ? '-sm' : ''}.jpg`;   // used by the credits page
+
+// Photos of a listing as [{ full, small, alt, sample }].
+// Listings from the API carry image paths; listings still in localStorage use LISTING_PHOTOS above.
+// Sample photos have a smaller -sm copy for cards; uploaded photos (later stage) will not.
+function photosOf(l) {
+  const paths = l.images || (LISTING_PHOTOS[l.id] || []).map(k => imgUrl(k));
+  return paths.map(p => {
+    const sample = IMAGES[p.split('/').pop().replace('.jpg', '')];
+    return { full: p, small: sample ? p.replace('.jpg', '-sm.jpg') : p, alt: sample ? sample.alt : 'Photo of the property', sample: !!sample };
+  });
+}
 
 // One photo as an <img>, or a calm "coming soon" block when the listing has no photo yet.
 function photoHTML(l, n = 0, small = true) {
-  const key = photosOf(l)[n];
-  if (!key) return `<div class="ph">${LOGO_MARK}<span>Photos coming soon</span></div>`;
-  return `<img src="${imgUrl(key, small)}" alt="${esc(IMAGES[key].alt)}" loading="lazy" width="${small ? 640 : 1280}" height="${small ? 480 : 960}">`;
+  const photo = photosOf(l)[n];
+  if (!photo) return `<div class="ph">${LOGO_MARK}<span>Photos coming soon</span></div>`;
+  return `<img src="${small ? photo.small : photo.full}" alt="${esc(photo.alt)}" loading="lazy" width="${small ? 640 : 1280}" height="${small ? 480 : 960}">`;
+}
+
+// ---------- API ----------
+// GET a JSON endpoint. Returns the parsed JSON, or null for a 404. Any other problem throws.
+async function apiGet(path) {
+  const res = await fetch(path);
+  if (res.status === 404) return null;
+  if (!res.ok) throw new Error('API ' + res.status);
+  return res.json();
 }
 
 // ---------- cards ----------
