@@ -1,4 +1,5 @@
-// Public property submission form. Demo: saves to localStorage with status "pending" (no account needed).
+// Public property submission form (no account needed). Sends the fields and photos to POST /api/submissions.
+// The server re-checks everything and saves the listing as "pending" until an admin approves it.
 const form = $('#listing-form');
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const PHONE_RE = /^(\+254|0)[17]\d{2}[\s-]?\d{3}[\s-]?\d{3}$/;
@@ -24,7 +25,7 @@ $('#photos').addEventListener('change', e => {
   $('#preview').innerHTML = bad ? '' : files.map(f => `<img src="${URL.createObjectURL(f)}" alt="Selected photo preview">`).join('');
 });
 
-form.addEventListener('submit', e => {
+form.addEventListener('submit', async e => {
   e.preventDefault();
   const v = n => form.elements[n].value.trim();
   const rent = Number(v('rent')), dist = Number(v('distance'));
@@ -42,17 +43,31 @@ form.addEventListener('submit', e => {
   ].every(Boolean);
   if (!ok) { $('.invalid input, .invalid select, .invalid textarea')?.focus(); return; }
 
-  const listing = {
-    title: v('title'), roomType: v('roomType'), rent, distance: dist, location: v('location'),
-    description: v('description'), availability: v('availability'),
-    amenities: $$('[name=amenity]:checked').map(b => b.value),
-    contact: { name: v('contactName'), phone: v('contactPhone'), email: v('contactEmail') },
-    status: 'pending', rejectionReason: '',          // new listings always go to pending
-  };
-  const all = getListings();
-  all.push({ id: Math.max(0, ...all.map(l => l.id)) + 1, created: new Date().toISOString().slice(0, 10), ...listing });
-  saveListings(all);
-  form.hidden = true; $('#done').hidden = false;
-  $('#done-title').textContent = listing.title;
-  scrollTo({ top: 0 });
+  // Send the form as multipart data. The browser adds the boundary, so no Content-Type header is set here.
+  const data = new FormData(form);
+  $('#form-error').hidden = true;
+  const button = $('button[type=submit]', form);
+  button.disabled = true; button.classList.add('is-loading');
+  let status = 0, result = {};
+  try {
+    const res = await fetch('/api/submissions', { method: 'POST', body: data });
+    status = res.status; result = await res.json().catch(() => ({}));
+  } catch { /* network problem: status stays 0 */ }
+  button.disabled = false; button.classList.remove('is-loading');
+
+  if (status === 201) {
+    form.hidden = true; $('#done').hidden = false;
+    $('#done-title').textContent = v('title');
+    scrollTo({ top: 0 });
+    return;
+  }
+  // Show the server's per-field messages next to the fields; anything else goes in the alert above the buttons.
+  const fieldErrors = Object.entries(result.errors || {}).filter(([name]) => form.elements[name]);
+  fieldErrors.forEach(([name, message]) => setErr(name, message));
+  if (fieldErrors.length) { $('.invalid input, .invalid select, .invalid textarea')?.focus(); return; }
+  const other = result.errors?.amenity ||
+    (status === 429 ? result.error : status === 0 ? 'Cannot reach the server. Please check your connection and try again.' : result.error || 'Something went wrong. Please try again.');
+  $('#form-error').innerHTML = icon('close', 20) + '<span></span>';
+  $('#form-error span').textContent = other;
+  $('#form-error').hidden = false;
 });

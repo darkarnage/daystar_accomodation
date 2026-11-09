@@ -23,30 +23,22 @@ const chipText = {
   maxDist: v => `Within ${v} km`,
 };
 
-let shown = [];   // listings currently matching (used by the mobile "Show N results" button)
+let shown = [];   // listings currently matching
+let latest = 0;   // numbers each request so a slow, old answer can never replace a newer one
 
-function render() {
+// Search, filter and sort happen in SQL: this just sends the form values to GET /api/listings.
+async function render() {
   const f = Object.fromEntries(new FormData(form));
   const wanted = $$('[name=amenity]:checked').map(b => b.value);
-  const q = (f.q || '').trim().toLowerCase();
-  const maxRent = Number(f.maxRent) || Infinity;
-  const maxDist = Number(f.maxDist) || Infinity;
-
-  // Public pages: approved AND available only (isPublic), so taken rooms never show up here.
-  shown = getListings().filter(l =>
-    isPublic(l) &&
-    (!q || (l.title + ' ' + l.location + ' ' + l.description).toLowerCase().includes(q)) &&
-    (!f.type || l.roomType === f.type) &&
-    l.rent <= maxRent && l.distance <= maxDist &&
-    wanted.every(a => l.amenities.includes(a)));
-
   const s = sortSel.value;
-  shown.sort((a, b) => s === 'rent' ? a.rent - b.rent : s === 'distance' ? a.distance - b.distance : b.id - a.id);
 
-  $('#count').textContent = shown.length + (shown.length === 1 ? ' listing found' : ' listings found');
-  $('#apply').textContent = shown.length ? `Show ${shown.length} ${shown.length === 1 ? 'result' : 'results'}` : 'No results';
-  $('#results').innerHTML = shown.length ? shown.map(l => cardHTML(l)).join('') :
-    `<div class="state">${icon('search', 32)}<h3>No listings match your filters</h3><p class="muted">Try a higher rent, a longer distance, or fewer amenities.</p><button class="btn btn-secondary" type="button" id="empty-clear">Clear all filters</button></div>`;
+  const api = new URLSearchParams();
+  if ((f.q || '').trim()) api.set('q', f.q.trim());
+  if (f.type) api.set('type', f.type);
+  if (Number(f.maxRent) > 0) api.set('maxRent', f.maxRent);
+  if (Number(f.maxDist) > 0) api.set('maxDist', f.maxDist);
+  wanted.forEach(a => api.append('amenity', a));
+  if (s) api.set('sort', s);
 
   // Active-filter chips (click one to remove it).
   const chips = ['q', 'type', 'maxRent', 'maxDist'].filter(k => f[k] && String(f[k]).trim())
@@ -60,16 +52,37 @@ function render() {
   wanted.forEach(a => p.append('amenity', a));
   if (s) p.set('sort', s);
   history.replaceState(null, '', p.toString() ? '?' + p : location.pathname);
+
+  const mine = ++latest;
+  try {
+    const data = await apiGet('/api/listings?' + api);
+    if (mine !== latest) return;   // a newer request has started
+    shown = data.listings;
+  } catch {
+    if (mine !== latest) return;
+    $('#count').textContent = '';
+    $('#results').innerHTML = `<div class="state">${icon('close', 32)}<h3>Could not load listings</h3><p class="muted">Check your connection and try again.</p><button class="btn btn-secondary" type="button" id="retry">Try again</button></div>`;
+    return;
+  }
+
+  $('#count').textContent = shown.length + (shown.length === 1 ? ' listing found' : ' listings found');
+  $('#apply').textContent = shown.length ? `Show ${shown.length} ${shown.length === 1 ? 'result' : 'results'}` : 'No results';
+  $('#results').innerHTML = shown.length ? shown.map(l => cardHTML(l)).join('') :
+    `<div class="state">${icon('search', 32)}<h3>No listings match your filters</h3><p class="muted">Try a higher rent, a longer distance, or fewer amenities.</p><button class="btn btn-secondary" type="button" id="empty-clear">Clear all filters</button></div>`;
 }
 
+// Typing in the search box waits a moment so we do not send a request for every key press.
+let timer;
 form.addEventListener('input', render);
+// The search box sits outside the <form> (it is linked with form="filters"), so its typing is listened to separately.
+$('#q').addEventListener('input', () => { clearTimeout(timer); timer = setTimeout(render, 250); });
 form.addEventListener('submit', e => e.preventDefault());
 form.addEventListener('reset', () => setTimeout(render));
 sortSel.addEventListener('change', render);
-document.addEventListener('favchange', render);
 
 // Chips and the empty-state button remove filters.
 document.addEventListener('click', e => {
+  if (e.target.closest('#retry')) return render();
   const chip = e.target.closest('[data-clear], [data-amenity], #empty-clear');
   if (!chip) return;
   if (chip.dataset.amenity) { const box = $(`[name=amenity][value="${CSS.escape(chip.dataset.amenity)}"]`); if (box) box.checked = false; }
@@ -93,4 +106,6 @@ document.addEventListener('keydown', e => { if (e.key === 'Escape' && form.class
 // If the window grows past the mobile size while the sheet is open, close it.
 matchMedia('(min-width: 901px)').addEventListener('change', e => { if (e.matches) setSheet(false); });
 
+// First load: show placeholders until the API answers.
+$('#results').innerHTML = '<div class="card card-skel"></div>'.repeat(6);
 render();

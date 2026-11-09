@@ -21,13 +21,18 @@
 <script src="/assets/js/main.js"></script>
 <script>
   if (requireRole('student')) {
-    const draw = () => {
+    // Favourite ids are kept in this browser. The listings come from the API, which only returns public ones,
+    // so a listing that was rejected, taken or deleted quietly disappears from this page.
+    const draw = async () => {
       const favs = getFavs();
-      // Only listings that are still public (approved and available) are shown.
-      const list = getListings().filter(l => isPublic(l) && favs.includes(l.id));
-      $('#count').textContent = list.length ? list.length + (list.length === 1 ? ' saved listing' : ' saved listings') : 'Listings you save appear here.';
-      $('#list').innerHTML = list.length ? list.map(l => cardHTML(l)).join('') :
-        `<div class="state">${icon('heart', 32)}<h3>No favourites yet</h3><p class="muted">Tap the heart on a listing to save it here and compare later.</p><a class="btn" href="/browse.html">Browse listings</a></div>`;
+      try {
+        const list = favs.length ? (await apiGet('/api/listings?limit=100')).listings.filter(l => favs.includes(l.id)) : [];
+        $('#count').textContent = list.length ? list.length + (list.length === 1 ? ' saved listing' : ' saved listings') : 'Listings you save appear here.';
+        $('#list').innerHTML = list.length ? list.map(l => cardHTML(l)).join('') :
+          `<div class="state">${icon('heart', 32)}<h3>No favourites yet</h3><p class="muted">Tap the heart on a listing to save it here and compare later.</p><a class="btn" href="/browse.html">Browse listings</a></div>`;
+      } catch {
+        $('#list').innerHTML = `<div class="state">${icon('close', 32)}<h3>Could not load your favourites</h3><p class="muted">Check your connection and try again.</p><button class="btn btn-secondary" type="button" onclick="location.reload()">Try again</button></div>`;
+      }
     };
     draw();
     document.addEventListener('favchange', draw);

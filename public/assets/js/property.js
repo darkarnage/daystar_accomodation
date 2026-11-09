@@ -1,35 +1,73 @@
-// Property page: shows one listing. The public sees approved + available listings only.
-// Landlord phone/email are shown to logged-in students only. Admins can preview any listing.
+// Property page. The listing comes from GET /api/listings/:id, which only returns approved + available listings
+// and never includes the owner's contact details.
+// Owner contact comes from GET /api/listings/:id/contact, which only answers to a logged-in student (session cookie).
+// Admins load the listing from GET /api/admin/listings/:id instead, so they can preview pending, rejected and taken
+// listings, see the rejection reason and see the owner's contact details.
 const id = Number(new URLSearchParams(location.search).get('id'));
-const l = getListings().find(x => x.id === id);
 const user = getUser();
 const view = $('#view');
+// If the server shows the login state is different from what this page started with, reload so the contact card is right.
+document.addEventListener('sessionchange', () => location.reload(), { once: true });
+view.innerHTML = '<div class="state" style="margin:var(--s7) 0"><p class="muted">Loading…</p></div>';
 
-const canPreview = user?.role === 'admin';
-
-if (!l || (!isPublic(l) && !canPreview)) {
+const notFound = () => {
   view.innerHTML = `<div class="state" style="margin:var(--s7) 0">${icon('home', 32)}<h2>Listing not found</h2>
     <p class="muted">It may have been removed, or it is not available right now.</p><a class="btn" href="/browse.html">Back to browse</a></div>`;
-} else {
+};
+
+(async () => {
+  let l;
+  try {
+    const url = (user?.role === 'admin' ? '/api/admin/listings/' : '/api/listings/') + id;
+    l = Number.isInteger(id) && id > 0 ? await apiGet(url) : null;
+  } catch {
+    view.innerHTML = `<div class="state" style="margin:var(--s7) 0">${icon('close', 32)}<h2>Could not load this listing</h2>
+      <p class="muted">Check your connection and try again.</p><button class="btn" type="button" onclick="location.reload()">Try again</button></div>`;
+    return;
+  }
+  if (!l) return notFound();
+  show(l, user?.role === 'student' ? await loadContact(l) : l.contact ? { state: 'ok', owner: l.contact } : null);   // l.contact: admin only
+})();
+
+// Ask the server for the owner's contact details. The answer is { state: 'ok', owner }, 'login' (not logged in
+// as a student, e.g. the session ended), 'unavailable' or 'error'.
+async function loadContact(l) {
+  try {
+    const res = await fetch(`/api/listings/${l.id}/contact`);
+    if (res.ok) return { state: 'ok', owner: await res.json() };
+    if (res.status === 401 || res.status === 403) return { state: 'login' };
+    if (res.status === 404) return { state: 'unavailable' };
+  } catch { /* network problem */ }
+  return { state: 'error' };
+}
+
+// The student's contact answer is passed in; everyone else gets the right message or login prompt.
+function show(l, contactResult) {
+
   document.title = l.title + ' · CampusNest';
-  const owner = listingContact(l);
   const here = encodeURIComponent(location.pathname + location.search);
-  const keys = photosOf(l);
+  const photos = photosOf(l);
   const available = l.availability === 'available';
 
   // Contact card: details for students, a login prompt for everyone else.
+  const loginPrompt = `<div class="contact-gate"><div class="lock">${icon('lock', 18)}<span>Log in as a student to see the owner's phone and email.</span></div>
+      <a class="btn btn-block" href="/login.html?next=${here}">Log in</a>
+      <a class="btn btn-secondary btn-block" href="/register.html">Create a free account</a></div>`;
   let contact;
-  if (user?.role === 'student') {
+  if (contactResult?.state === 'ok') {
+    const owner = contactResult.owner;
     contact = `<p><b>${esc(owner.name)}</b></p>
       <p class="contact-line">${icon('phone', 18)}<a href="tel:${esc(owner.phone.replace(/\s/g, ''))}">${esc(owner.phone)}</a></p>
       <p class="contact-line">${icon('mail', 18)}<a href="mailto:${esc(owner.email)}">${esc(owner.email)}</a></p>
       <p class="muted small">Mention CampusNest when you call.</p>`;
-  } else if (user) {
-    contact = `<div class="contact-gate"><div class="lock">${icon('lock', 18)}<span>Contact details are shown to logged-in students only.</span></div></div>`;
+  } else if (contactResult?.state === 'unavailable') {
+    contact = '<p class="muted">Contact details are not available for this listing.</p>';
+  } else if (contactResult?.state === 'error') {
+    contact = '<p class="muted">Could not load the contact details.</p><button class="btn btn-secondary btn-sm" type="button" onclick="location.reload()">Try again</button>';
+  } else if (user) {   // an admin (or a session that just ended): not a student
+    contact = user.role === 'student' ? loginPrompt : `<div class="contact-gate"><div class="lock">${icon('lock', 18)}<span>Contact details are shown to logged-in students only.</span></div></div>`;
   } else {
-    contact = `<div class="contact-gate"><div class="lock">${icon('lock', 18)}<span>Log in as a student to see the owner's phone and email.</span></div>
-      <a class="btn btn-block" href="/login.html?next=${here}">Log in</a>
-      <a class="btn btn-secondary btn-block" href="/register.html">Create a free account</a></div>`;
+    contact = loginPrompt;
   }
 
   // Admin/preview banner for listings that are not public.
@@ -38,12 +76,12 @@ if (!l || (!isPublic(l) && !canPreview)) {
      ${l.status === 'rejected' ? esc(l.rejectionReason) : l.status === 'pending' ? 'Waiting for admin approval.' : ''}</span></div>`;
 
   // Gallery: one big photo plus a mosaic. Missing photos get a calm placeholder.
-  const gallery = keys.length
-    ? `<div class="gallery" id="gallery" data-n="${keys.length}">
-        ${keys.map((k, i) => `<a href="${imgUrl(k)}" data-i="${i}" aria-label="Open photo ${i + 1} of ${keys.length}"><img src="${imgUrl(k, i > 0)}" alt="${esc(IMAGES[k].alt)}" width="${i ? 640 : 1280}" height="${i ? 480 : 960}" ${i ? 'loading="lazy"' : ''}></a>`).join('')}
-        ${keys.length > 1 ? `<button class="btn btn-sm gallery-all" type="button" data-i="0">${icon('camera', 16)}View all ${keys.length} photos</button>` : ''}
+  const gallery = photos.length
+    ? `<div class="gallery" id="gallery" data-n="${photos.length}">
+        ${photos.map((p, i) => `<a href="${p.full}" data-i="${i}" aria-label="Open photo ${i + 1} of ${photos.length}"><img src="${i ? p.small : p.full}" alt="${esc(p.alt)}" width="${i ? 640 : 1280}" height="${i ? 480 : 960}" ${i ? 'loading="lazy"' : ''}></a>`).join('')}
+        ${photos.length > 1 ? `<button class="btn btn-sm gallery-all" type="button" data-i="0">${icon('camera', 16)}View all ${photos.length} photos</button>` : ''}
       </div>
-      <p class="gallery-note">Sample photographs for demonstration. They do not show the actual property.</p>`
+      ${photos.some(p => p.sample) ? '<p class="gallery-note">Sample photographs for demonstration. They do not show the actual property.</p>' : ''}`
     : `<div class="gallery" data-n="1"><div class="ph">${LOGO_MARK}<span>The owner has not added photos yet</span></div></div>`;
 
   const facts = [
@@ -96,14 +134,15 @@ if (!l || (!isPublic(l) && !canPreview)) {
   if (user && user.role !== 'student') favBtn.hidden = true;   // only students have favourites
 
   // Photo viewer.
-  if (keys.length) {
+  if (photos.length) {
     const box = $('#lightbox'), img = $('#lb-img');
     let at = 0;
     $('#lb-close').innerHTML = icon('close', 22); $('#lb-prev').innerHTML = icon('left', 22); $('#lb-next').innerHTML = icon('right', 22);
     const show = n => {
-      at = (n + keys.length) % keys.length;
-      img.src = imgUrl(keys[at]); img.alt = IMAGES[keys[at]].alt;
-      $('#lb-count').textContent = `Photo ${at + 1} of ${keys.length}`;
+      at = (n + photos.length) % photos.length;
+      img.src = photos[at].full; img.alt = photos[at].alt;
+      $('#lb-count').textContent = `Photo ${at + 1} of ${photos.length}`;
+      $('#lb-cap').textContent = photos[at].sample ? 'Sample photograph for demonstration. It does not show the actual property.' : '';
     };
     $('#gallery').addEventListener('click', e => {
       const t = e.target.closest('[data-i]');

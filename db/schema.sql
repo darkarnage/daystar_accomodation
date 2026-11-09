@@ -7,7 +7,7 @@ CREATE TABLE users (
   email         VARCHAR(255) NOT NULL,
   password_hash VARCHAR(100) NOT NULL,          -- bcrypt hash, never the password
   phone         VARCHAR(20)  NOT NULL,
-  role          ENUM('student','landlord','admin') NOT NULL,
+  role          ENUM('student','admin') NOT NULL,   -- no landlord accounts: owners use the public submission form
   created_at    TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (id),
   UNIQUE KEY uq_users_email (email)
@@ -15,24 +15,23 @@ CREATE TABLE users (
 
 CREATE TABLE listings (
   id               INT UNSIGNED NOT NULL AUTO_INCREMENT,
-  landlord_id      INT UNSIGNED NOT NULL,
   title            VARCHAR(150) NOT NULL,
   description      TEXT NOT NULL,
   room_type        ENUM('single','bedsit','one_bedroom','shared','hostel') NOT NULL,
   rent_kes         INT UNSIGNED NOT NULL,
   location         VARCHAR(150) NOT NULL,
-  distance_km      DECIMAL(3,1) NOT NULL,        -- distance to campus, entered by landlord
+  distance_km      DECIMAL(3,1) NOT NULL,        -- distance to campus, entered by the submitter
   availability     ENUM('available','taken') NOT NULL DEFAULT 'available',
   status           ENUM('pending','approved','rejected') NOT NULL DEFAULT 'pending',
   rejection_reason VARCHAR(255) NULL,
+  -- Contact details typed into the public submission form. Only logged-in students may see them.
+  contact_name     VARCHAR(100) NOT NULL,
+  contact_phone    VARCHAR(20)  NOT NULL,
+  contact_email    VARCHAR(255) NOT NULL,
   created_at       TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (id),
   KEY idx_listings_browse (status, availability, rent_kes),
-  KEY idx_listings_landlord (landlord_id),
-  CONSTRAINT chk_listings_rent CHECK (rent_kes > 0),
-  -- Deleting a landlord deletes their listings (and, via the tables below, everything attached)
-  CONSTRAINT fk_listings_landlord FOREIGN KEY (landlord_id)
-    REFERENCES users (id) ON DELETE CASCADE
+  CONSTRAINT chk_listings_rent CHECK (rent_kes > 0)
 ) ENGINE=InnoDB;
 
 CREATE TABLE listing_images (
@@ -72,4 +71,19 @@ CREATE TABLE favourites (
     REFERENCES users (id) ON DELETE CASCADE,
   CONSTRAINT fk_fav_listing FOREIGN KEY (listing_id)
     REFERENCES listings (id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+-- Login sessions. The cookie holds a random token; only its SHA-256 hash is stored here,
+-- so a leaked database cannot be used to log in. Logging out deletes the row.
+CREATE TABLE sessions (
+  token_hash CHAR(64) NOT NULL,
+  csrf_token CHAR(64) NOT NULL,                  -- random value the pages must send back on admin changes (CSRF protection)
+  user_id    INT UNSIGNED NOT NULL,
+  expires_at DATETIME NOT NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (token_hash),
+  KEY idx_sessions_user (user_id),
+  KEY idx_sessions_expires (expires_at),
+  CONSTRAINT fk_sessions_user FOREIGN KEY (user_id)
+    REFERENCES users (id) ON DELETE CASCADE
 ) ENGINE=InnoDB;
