@@ -1,68 +1,27 @@
-// Shared frontend code: demo data, "session", favourites, navbar/footer, card renderer.
-// DEMO MODE: everything lives in localStorage. The real backend will replace the CN.* data helpers.
+// Shared frontend code: constants, small helpers, login state, favourites, navbar/footer, card renderer.
+// Listings, accounts and moderation live in the database (see /api). Only favourites and a saved copy of the
+// logged-in user are kept in this browser's localStorage.
 
 const ROOM_TYPES = { single: 'Single room', bedsit: 'Bedsit', one_bedroom: 'One bedroom', shared: 'Shared room', hostel: 'Hostel' };
 const AMENITIES = ['Wi-Fi', 'Water 24/7', 'Security guard', 'Fenced compound', 'Parking', 'Furnished', 'Own bathroom', 'Kitchen', 'Backup power', 'Near matatu stage'];
 
-// Fake people. Phones/emails are placeholders.
-const DEMO_USERS = {
-  student: { id: 1, name: 'Faith Wanjiru', email: 'faith@student.daystar.ac.ke', phone: '0700 000 001', role: 'student' },
-  admin: { id: 99, name: 'Site Admin', email: 'admin@campusnest.test', phone: '0700 000 099', role: 'admin' },
-};
-// Contact details of the demo property owners. Submitted listings carry their own contact details.
-const LANDLORDS = {
-  11: { name: 'Mama Njeri Properties', phone: '0700 000 011', email: 'njeri@example.com' },
-  12: { name: 'Mr. Kamau Ochieng', phone: '0700 000 012', email: 'kamau@example.com' },
-  13: { name: 'Savannah Court Ltd', phone: '0700 000 013', email: 'savannah@example.com' },
-  14: { name: 'Mrs. Achieng Otieno', phone: '0700 000 014', email: 'achieng@example.com' },
-};
-
-// [id, owner id, title, type, rent, location, km, availability, status, amenity indexes, description, rejection]
-const DEMO_ROWS = [
-  [1, 11, 'Sunrise Bedsit near Daystar Gate', 'bedsit', 7500, 'Daystar Gate, Athi River', 0.4, 'available', 'approved', [0, 1, 2, 3, 6], 'A bright self-contained bedsit a five-minute walk from the main gate. Tiled floor, own bathroom and a small cooking corner. Quiet compound with a night guard, popular with final-year students.'],
-  [2, 12, 'Budget Single Room, Kapiti Road', 'single', 4500, 'Kapiti Road, Athi River', 1.2, 'available', 'approved', [1, 3, 9], 'Simple, clean single room with shared bathrooms. Water is reliable and the matatu stage is 2 minutes away. Best value for first-years on a tight budget.'],
-  [3, 13, 'Savannah Court One Bedroom', 'one_bedroom', 16000, 'Mlolongo', 5.8, 'available', 'approved', [0, 1, 2, 3, 4, 5, 6, 7, 8], 'Modern furnished one-bedroom with a full kitchen, fast fibre Wi-Fi and backup power. Gated compound with parking. Ideal if you want a calm place to study or to share with a friend.'],
-  [4, 14, 'Athi Hostel (Women only)', 'hostel', 5500, 'Athi River Town', 2.1, 'available', 'approved', [0, 1, 2, 3, 7], 'Women-only hostel with shared kitchen and a study lounge. Security guard on duty day and night. Rent includes water and Wi-Fi.'],
-  [5, 11, 'Cosy Shared Room, Two Sharing', 'shared', 3500, 'Stoni Athi', 3.4, 'available', 'approved', [1, 3, 9], 'Two students share a spacious room with double-decker beds and lockers. Cheapest option in the area. Bring your own mattress cover.'],
-  [6, 12, 'Kitengela Single with Own Bathroom', 'single', 8500, 'Kitengela', 7.9, 'available', 'approved', [0, 1, 2, 3, 4, 6], 'Single room with an en-suite bathroom in a modern block. Further from campus but on the main road with frequent matatus.'],
-  [7, 13, 'Syokimau Executive Bedsit', 'bedsit', 11000, 'Syokimau', 9.3, 'taken', 'approved', [0, 1, 2, 3, 5, 6, 8], 'Furnished bedsit near the Syokimau railway station. Currently fully occupied; check back next semester.'],
-  [8, 14, 'Lukenya View Single Room', 'single', 5000, 'Lukenya', 6.5, 'available', 'approved', [1, 3, 8], 'Peaceful single room with a view of the hills. Water tank and backup power. Short boda-boda ride to campus.'],
-  [9, 11, 'Mavoko Student Bedsit', 'bedsit', 6800, 'Mavoko', 1.8, 'available', 'approved', [0, 1, 2, 3, 6, 9], 'Affordable bedsit with Wi-Fi included. Walking distance to shops, a salon and a small gym.'],
-  [10, 12, 'Katani Shared Two-Bedroom', 'shared', 4200, 'Katani', 4.7, 'available', 'approved', [1, 3, 7], 'Share a two-bedroom house with three other students. Own bed and shelf, shared kitchen and living room.'],
-  [11, 13, 'New Bedsit, EPZ Road', 'bedsit', 7000, 'EPZ Road, Athi River', 2.6, 'available', 'pending', [0, 1, 3, 6], 'Newly built bedsits, just completed. Waiting for approval.'],
-  [12, 14, 'Kinanie Single Room', 'single', 3900, 'Kinanie', 5.2, 'available', 'pending', [1, 3], 'Basic single room, tap water, fenced compound.'],
-  [13, 12, 'Luxury Penthouse Studio', 'one_bedroom', 45000, 'Nairobi Expressway', 28.0, 'available', 'rejected', [0, 1, 2, 4, 5], 'Studio far from campus.', 'Too far from Daystar (28 km). Please list properties within 10 km of the campus.'],
-];
-
-function seedListings() {
-  return DEMO_ROWS.map(r => ({
-    id: r[0], landlordId: r[1], title: r[2], roomType: r[3], rent: r[4], location: r[5], distance: r[6],
-    availability: r[7], status: r[8], amenities: r[9].map(i => AMENITIES[i]), description: r[10],
-    rejectionReason: r[11] || '', created: '2026-10-' + String(r[0] + 8).padStart(2, '0'),
-  }));
-}
+// The seeded demo student (created by db/seed.js in development), used by the "Log in as demo student" button.
+const DEMO_USERS = { student: { email: 'faith@student.daystar.ac.ke' } };
 
 // ---------- storage ----------
 const read = (k, fallback) => { try { return JSON.parse(localStorage.getItem(k)) ?? fallback; } catch { return fallback; } };
 const write = (k, v) => localStorage.setItem(k, JSON.stringify(v));
 
-function getListings() {
-  let all = read('cn_listings', null);
-  if (!all) { all = seedListings(); write('cn_listings', all); }
-  return all;
-}
-const saveListings = all => write('cn_listings', all);
-// The logged-in user. For students, cn_user is only a saved copy of what the server says (see syncSession below):
-// the server session cookie is what really counts. The admin is still a localStorage demo until the admin stage.
+// The logged-in user. cn_user is only a saved copy of what the server says (see syncSession below):
+// the server session cookie is what really counts.
 const getUser = () => { const u = read('cn_user', null); return u && ['student', 'admin'].includes(u.role) ? u : null; };
 const getFavs = () => read('cn_favs', []);
 // Logging out ends the server session (students) and clears the saved copy of the user.
 async function endSession() { try { await fetch('/api/auth/logout', { method: 'POST' }); } catch { /* server offline: still log out here */ } }
 async function logout() { await endSession(); localStorage.removeItem('cn_user'); location.href = '/'; }
-async function resetDemo() { await endSession(); ['cn_listings', 'cn_user', 'cn_favs'].forEach(k => localStorage.removeItem(k)); location.href = '/'; }
-
-// Contact details for a listing: the ones typed into the submission form, or the demo owner's.
-const listingContact = l => l.contact || LANDLORDS[l.landlordId] || { name: 'Property owner', phone: '', email: '' };
+async function clearSavedData() { await endSession(); ['cn_user', 'cn_favs'].forEach(k => localStorage.removeItem(k)); location.href = '/'; }
+// Older versions of the demo kept listings and accounts in this browser. They are not used any more.
+['cn_listings', 'cn_users'].forEach(k => localStorage.removeItem(k));
 
 // Public pages only ever show approved listings that are still available.
 const isPublic = l => l.status === 'approved' && l.availability === 'available';
@@ -115,6 +74,7 @@ const ICONS = {
   camera: '<path d="M4 8h3l2-3h6l2 3h3v11H4zM12 17a3.500 3.500 0 1 0 0-7 3.500 3.500 0 0 0 0 7Z"/>',
   sparkle: '<path d="M12 4v4M12 16v4M4 12h4M16 12h4"/>',
   home: '<path d="m3 11 9-7 9 7M5 10v10h14V10"/>',
+  trash: '<path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/>',
 };
 const icon = (name, size = 20) => `<svg class="icon" viewBox="0 0 24 24" width="${size}" height="${size}" aria-hidden="true">${ICONS[name] || ''}</svg>`;
 const AMENITY_ICON = { 'Wi-Fi': 'wifi', 'Water 24/7': 'water', 'Security guard': 'shield', 'Fenced compound': 'fence', 'Parking': 'car', 'Furnished': 'sofa', 'Own bathroom': 'bath', 'Kitchen': 'kitchen', 'Backup power': 'power', 'Near matatu stage': 'bus' };
@@ -162,30 +122,12 @@ const IMAGES = {
   'studio-kitchenette': { alt: "Small studio with a sofa and kitchenette", by: "Icade", license: "CC BY-SA 4.0", page: "https://commons.wikimedia.org/wiki/File:Montpellier_studio_icade.jpg" },
   'living-bright': { alt: "Bright living area", by: "Artchapiz", license: "CC0", page: "https://commons.wikimedia.org/wiki/File:Artchapiz1_artchapiz.es_apartment_rental_granada_01.jpg" },
 };
-// Which sample photos each demo listing shows (first one is the cover). Listings submitted in the demo have no photos yet.
-const LISTING_PHOTOS = {
-  1: ['bedroom-dark-wall', 'study-laptop', 'dining-kitchenette', 'bedroom-teal', 'exterior-brick'],
-  2: ['bedroom-window', 'desk-shelf', 'kitchen-wood', 'exterior-block'],
-  3: ['living-blue-sofa', 'bedroom-lamps', 'kitchen-dining-modern', 'living-leather-sofa', 'bedroom-mountain'],
-  4: ['hostel-bunks-bright', 'bunk-room', 'kitchen-shared', 'desk-shelf', 'exterior-apartments'],
-  5: ['bunk-desk', 'bunk-plain', 'study-laptop', 'kitchen-steel'],
-  6: ['bedroom-teal', 'bedroom-window', 'studio-living', 'exterior-block'],
-  7: ['bedroom-mountain', 'studio-living', 'kitchen-dining-modern', 'exterior-modern'],
-  8: ['bedroom-attic', 'study-laptop', 'kitchen-wood', 'exterior-apartments'],
-  9: ['desk-shelf', 'bedroom-dark-wall', 'dining-kitchenette', 'exterior-block'],
-  10: ['hostel-tv', 'bunk-room', 'living-white-sofa', 'kitchen-steel', 'exterior-apartments'],
-  11: ['bedroom-lamps', 'studio-kitchenette', 'exterior-modern'],
-  12: ['bunk-plain', 'kitchen-wood'],
-  13: ['living-leather-sofa', 'living-bright', 'kitchen-dining-modern'],
-};
 const imgUrl = (key, small) => `/assets/images/${key}${small ? '-sm' : ''}.jpg`;   // used by the credits page
 
 // Photos of a listing as [{ full, small, alt, sample }].
-// Listings from the API carry image paths; listings still in localStorage use LISTING_PHOTOS above.
-// Sample photos have a smaller -sm copy for cards; uploaded photos (later stage) will not.
+// Listings from the API carry image paths. Sample photos have a smaller -sm copy for cards; uploaded photos do not.
 function photosOf(l) {
-  const paths = l.images || (LISTING_PHOTOS[l.id] || []).map(k => imgUrl(k));
-  return paths.map(p => {
+  return (l.images || []).map(p => {
     const sample = IMAGES[p.split('/').pop().replace('.jpg', '')];
     return { full: p, small: sample ? p.replace('.jpg', '-sm.jpg') : p, alt: sample ? sample.alt : 'Photo of ' + (l.title || 'the property'), sample: !!sample };
   });
@@ -272,10 +214,10 @@ function renderChrome() {
       <p>Find a place to call home.</p></div>
     <nav class="foot-links" aria-label="Footer"><a href="/browse.html">Browse</a><a href="/submit-property.html">List a property</a><a href="/about.html">About</a><a href="/contact.html">Contact</a></nav>
     <p class="foot-small">CampusNest is an independent student accommodation platform, starting with Daystar University, Athi River. It is not run by the university.<br>
-      <a href="/credits.html">Photo credits</a> · <a href="/admin/login.html">Admin</a> · <a href="#" id="reset-demo">Reset demo data</a></p></div>`;
+      <a href="/credits.html">Photo credits</a> · <a href="/admin/login.html">Admin</a> · <a href="#" id="reset-demo">Clear saved data</a></p></div>`;
 
   $('#logout')?.addEventListener('click', logout);
-  $('#reset-demo')?.addEventListener('click', e => { e.preventDefault(); resetDemo(); });
+  $('#reset-demo')?.addEventListener('click', e => { e.preventDefault(); clearSavedData(); });
 
   if (!header) return;   // pages without the site header (admin login)
 
@@ -334,14 +276,13 @@ function requireRole(...roles) {
 }
 
 // The page first shows the saved user (no flicker), then asks the server who is really logged in.
-// If they differ, update the saved copy and redraw the header. The demo admin is left alone.
+// If they differ, update the saved copy and redraw the header.
 async function syncSession() {
   try {
     const res = await fetch('/api/auth/me');
     if (!res.ok) return;
     const server = (await res.json()).user;
     const saved = getUser();
-    if (saved?.role === 'admin') return;
     if (JSON.stringify(server) === JSON.stringify(saved)) return;
     if (server) write('cn_user', server); else localStorage.removeItem('cn_user');
     renderChrome();

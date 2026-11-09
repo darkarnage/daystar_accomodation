@@ -192,7 +192,10 @@ test('if the database step fails, the photos already saved are deleted again', a
 });
 
 test('uploaded files cannot be used to reach other files', async () => {
-  const [[{ file_path }]] = await pool.query("SELECT file_path FROM listing_images ORDER BY id DESC LIMIT 1");
+  // A photo is only served once its listing is approved and available (see the admin tests), so approve one first.
+  const made = await submit(MAIN, fields({ title: `TEST-${run} file access` }), [{ data: PNG }]);
+  await pool.query("UPDATE listings SET status = 'approved' WHERE id = ?", [made.json.id]);
+  const [[{ file_path }]] = await pool.query('SELECT file_path FROM listing_images WHERE listing_id = ?', [made.json.id]);
   const name = path.basename(file_path);
   for (const p of ['/uploads/', '/uploads', `/uploads/..%2f..%2fpackage.json`, '/uploads/%2e%2e/package.json', '/uploads/../package.json', '/uploads/.hidden', '/uploads/nothing.png']) {
     const r = await fetch(url(MAIN, p));

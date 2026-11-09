@@ -19,12 +19,20 @@
     <div id="queue"></div>
   </main>
 </div>
-<dialog id="reject-dialog">
+<dialog id="reject-dialog" class="admin-dialog">
   <form method="dialog" id="reject-form">
     <h3>Reject listing</h3>
     <p class="muted" id="reject-title"></p>
     <div class="field"><label for="reason">Reason <span class="hint">(shown with the rejected listing)</span></label><textarea id="reason" rows="3" maxlength="255"></textarea><p class="err"></p></div>
     <div class="dialog-actions"><button class="btn btn-secondary btn-sm" value="cancel" formnovalidate>Cancel</button><button class="btn btn-danger btn-sm" id="reject-ok" value="ok">Reject listing</button></div>
+  </form>
+</dialog>
+<dialog id="delete-dialog" class="admin-dialog">
+  <form method="dialog">
+    <h3>Delete listing</h3>
+    <p class="muted" id="delete-title"></p>
+    <p>This permanently deletes the listing and its photos. It cannot be undone.</p>
+    <div class="dialog-actions"><button class="btn btn-secondary btn-sm" value="cancel" formnovalidate>Cancel</button><button class="btn btn-danger btn-sm" id="delete-ok" value="ok">Delete permanently</button></div>
   </form>
 </dialog>
 <script src="/assets/js/main.js"></script>

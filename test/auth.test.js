@@ -128,8 +128,8 @@ test('contact is not available for hidden listings or bad ids', async () => {
 test('an admin session is not allowed to use the student contact endpoint', async () => {
   const [[admin]] = await pool.query("SELECT id FROM users WHERE role = 'admin' LIMIT 1");
   const token = crypto.randomBytes(32).toString('hex');
-  await pool.query("INSERT INTO sessions (token_hash, user_id, expires_at) VALUES (?, ?, DATE_ADD(NOW(), INTERVAL 1 HOUR))",
-    [crypto.createHash('sha256').update(token).digest('hex'), admin.id]);
+  await pool.query("INSERT INTO sessions (token_hash, csrf_token, user_id, expires_at) VALUES (?, ?, ?, DATE_ADD(NOW(), INTERVAL 1 HOUR))",
+    [crypto.createHash('sha256').update(token).digest('hex'), crypto.randomBytes(32).toString('hex'), admin.id]);
   const b = browser(); b.setCookie('cn_session=' + token);
   assert.strictEqual((await b.get('/api/listings/1/contact')).status, 403);
 });

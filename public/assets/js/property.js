@@ -1,7 +1,8 @@
 // Property page. The listing comes from GET /api/listings/:id, which only returns approved + available listings
 // and never includes the owner's contact details.
 // Owner contact comes from GET /api/listings/:id/contact, which only answers to a logged-in student (session cookie).
-// Admins can preview non-public listings from the localStorage demo data (until the admin stage).
+// Admins load the listing from GET /api/admin/listings/:id instead, so they can preview pending, rejected and taken
+// listings, see the rejection reason and see the owner's contact details.
 const id = Number(new URLSearchParams(location.search).get('id'));
 const user = getUser();
 const view = $('#view');
@@ -17,15 +18,15 @@ const notFound = () => {
 (async () => {
   let l;
   try {
-    l = Number.isInteger(id) && id > 0 ? await apiGet('/api/listings/' + id) : null;
+    const url = (user?.role === 'admin' ? '/api/admin/listings/' : '/api/listings/') + id;
+    l = Number.isInteger(id) && id > 0 ? await apiGet(url) : null;
   } catch {
     view.innerHTML = `<div class="state" style="margin:var(--s7) 0">${icon('close', 32)}<h2>Could not load this listing</h2>
       <p class="muted">Check your connection and try again.</p><button class="btn" type="button" onclick="location.reload()">Try again</button></div>`;
     return;
   }
-  if (!l && user?.role === 'admin') l = getListings().find(x => x.id === id);   // admin preview
   if (!l) return notFound();
-  show(l, user?.role === 'student' ? await loadContact(l) : null);
+  show(l, user?.role === 'student' ? await loadContact(l) : l.contact ? { state: 'ok', owner: l.contact } : null);   // l.contact: admin only
 })();
 
 // Ask the server for the owner's contact details. The answer is { state: 'ok', owner }, 'login' (not logged in

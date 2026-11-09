@@ -127,3 +127,7 @@ exports.contact = async (req, res) => {
     res.status(500).json({ error: 'Something went wrong. Please try again.' });
   }
 };
+
+// Shared with the admin controller.
+exports.COLUMNS = COLUMNS;
+exports.toJson = toJson;

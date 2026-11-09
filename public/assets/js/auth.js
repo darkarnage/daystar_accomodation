@@ -1,6 +1,6 @@
 // Login and registration.
-// Students: the forms talk to the server (/api/auth/...), which checks the password and sets an HttpOnly cookie.
-// Admin login is still a localStorage demo until the admin stage.
+// The forms talk to the server (/api/auth/...), which checks the password and sets an HttpOnly cookie.
+// Students and the admin use different endpoints, so an admin account cannot log in on the student form or the other way round.
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const PHONE_RE = /^(\+254|0)[17]\d{2}[\s-]?\d{3}[\s-]?\d{3}$/;
 
@@ -43,7 +43,7 @@ if (msg === 'fav' && $('#msg')) $('#msg').innerHTML = '<div class="alert">Log in
 $$('[data-demo]').forEach(b => b.addEventListener('click', () => {
   const f = $('form');
   f.elements.email.value = DEMO_USERS[b.dataset.demo].email;
-  f.elements.password.value = b.dataset.demo === 'student' ? 'demo-password' : 'demo-admin';   // student: seeded by db/seed.js
+  f.elements.password.value = 'demo-password';   // the demo student is created by db/seed.js (development only)
   b.classList.add('is-loading');
   f.requestSubmit();
 }));
@@ -91,16 +91,22 @@ $('#register-form')?.addEventListener('submit', async e => {
   }
 });
 
-// ----- admin login (demo, localStorage) -----
-$('#admin-login-form')?.addEventListener('submit', e => {
+// ----- admin login (real) -----
+$('#admin-login-form')?.addEventListener('submit', async e => {
   e.preventDefault();
-  const f = e.target;
+  const f = e.target, button = $('button[type=submit]', f);
   const email = f.elements.email.value.trim();
   const ok = [
     setErr(f, 'email', EMAIL_RE.test(email) ? '' : 'Enter a valid email address.'),
     setErr(f, 'password', f.elements.password.value ? '' : 'Enter your password.'),
   ].every(Boolean);
   if (!ok) return;
-  if (email.toLowerCase() !== DEMO_USERS.admin.email) return setErr(f, 'email', 'That is not an admin account.');
-  finish(f, DEMO_USERS.admin);
+  busy(button, true);
+  const { status, data } = await postJson('/api/auth/admin/login', { email, password: f.elements.password.value });
+  busy(button, false);
+  if (status === 200) return finish(f, data.user);
+  setErr(f, 'password',
+    status === 401 ? 'Incorrect email or password.' :
+    status === 429 ? 'Too many failed attempts. Please wait 15 minutes and try again.' :
+    status === 0 ? 'Cannot reach the server. Please try again.' : 'Something went wrong. Please try again.');
 });

@@ -1,6 +1,6 @@
 # Project scaffold
 
-The frontend in `public/` is a finished localStorage demo. The server files below are still placeholders: each has one comment describing its job, and they are being implemented in stages on the `backend-integration` branch.
+The frontend in `public/` talks to the Express API in `server/` (MySQL for data, `uploads/` for photos). Favourites and a saved copy of the logged-in user are the only things kept in the browser. Gemini search is the one planned feature not built yet.
 
 ```text
 design/              Google Stitch exports, one folder per area (see design/README.md)
@@ -19,6 +19,6 @@ uploads/             Uploaded listing images (not committed)
 ```
 
 ## Notes
-- The route, controller and middleware files are **not wired into `server/index.js` yet**. They are empty placeholders.
+- All route, controller and middleware files are wired into `server/index.js`. `npm test` runs the API tests (the server and database must be running).
 - Folders that would otherwise be empty contain a `.gitkeep` so Git tracks them.
 - `.env` is local only. Copy `.env.example` to `.env`.

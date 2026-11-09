@@ -1,10 +1,11 @@
-// Controller: student registration, login, logout and "who am I" (admin login comes in a later stage).
+// Controller: student registration, student and admin login, logout and "who am I".
 const bcrypt = require('bcrypt');
 const crypto = require('crypto');
 const pool = require('../db');
 const { readCookie, sha256, COOKIE } = require('../middleware/auth.middleware');
 
-const SESSION_DAYS = 7;
+const STUDENT_SESSION_HOURS = 7 * 24;
+const ADMIN_SESSION_HOURS = 8;   // admins are logged out sooner
 const COOKIE_OPTIONS = {
   httpOnly: true,                                  // JavaScript on the page cannot read the cookie
   sameSite: 'lax',                                 // not sent with cross-site POSTs
@@ -37,13 +38,15 @@ function recordFailure(key) {
 }
 
 // Create a session row and set the cookie.
-async function startSession(res, userId) {
+async function startSession(res, userId, hours) {
   const token = crypto.randomBytes(32).toString('hex');
+  const csrf = crypto.randomBytes(32).toString('hex');
   await pool.query('DELETE FROM sessions WHERE expires_at < NOW()');   // tidy up old sessions
   await pool.query(
-    'INSERT INTO sessions (token_hash, user_id, expires_at) VALUES (?, ?, DATE_ADD(NOW(), INTERVAL ? DAY))',
-    [sha256(token), userId, SESSION_DAYS]);
-  res.cookie(COOKIE, token, { ...COOKIE_OPTIONS, maxAge: SESSION_DAYS * 24 * 60 * 60 * 1000 });
+    'INSERT INTO sessions (token_hash, csrf_token, user_id, expires_at) VALUES (?, ?, ?, DATE_ADD(NOW(), INTERVAL ? HOUR))',
+    [sha256(token), csrf, userId, hours]);
+  res.cookie(COOKIE, token, { ...COOKIE_OPTIONS, maxAge: hours * 60 * 60 * 1000 });
+  return csrf;
 }
 
 const publicUser = (u) => ({ id: u.id, name: u.name, email: u.email, phone: u.phone, role: u.role });
@@ -70,8 +73,8 @@ exports.register = async (req, res) => {
     const [result] = await pool.query(
       "INSERT INTO users (name, email, password_hash, phone, role) VALUES (?, ?, ?, ?, 'student')",
       [name, email, hash, phone]);
-    await startSession(res, result.insertId);
-    res.status(201).json({ user: { id: result.insertId, name, email, phone, role: 'student' } });
+    const csrfToken = await startSession(res, result.insertId, STUDENT_SESSION_HOURS);
+    res.status(201).json({ user: { id: result.insertId, name, email, phone, role: 'student' }, csrfToken });
   } catch (err) {
     if (err.code === 'ER_DUP_ENTRY') return res.status(409).json({ errors: { email: 'That email is already registered.' } });
     console.error('register failed:', err.message);
@@ -79,34 +82,40 @@ exports.register = async (req, res) => {
   }
 };
 
-// POST /api/auth/login  (students only: admin login is a separate, later stage)
-exports.login = async (req, res) => {
-  const b = req.body || {};
-  const email = isText(b.email) ? b.email.trim().toLowerCase() : '';
-  const password = isText(b.password) ? b.password : '';
-  if (!email || !password || password.length > 200) return res.status(400).json({ error: 'Enter your email and password.' });
+// Student login and admin login are the same steps for a different role, so one function builds both.
+// An admin can only log in through the admin endpoint, and a student only through the student one.
+// There is no way to register as an admin: the only admin account is created by db/seed.js.
+function loginFor(role, hours) {
+  return async (req, res) => {
+    const b = req.body || {};
+    const email = isText(b.email) ? b.email.trim().toLowerCase() : '';
+    const password = isText(b.password) ? b.password : '';
+    if (!email || !password || password.length > 200) return res.status(400).json({ error: 'Enter your email and password.' });
 
-  const key = failKey(req, email);
-  if (isLocked(key)) return res.status(429).json({ error: 'Too many failed attempts. Please wait 15 minutes and try again.' });
+    const key = role + '|' + failKey(req, email);
+    if (isLocked(key)) return res.status(429).json({ error: 'Too many failed attempts. Please wait 15 minutes and try again.' });
 
-  try {
-    const [rows] = await pool.query(
-      "SELECT id, name, email, phone, role, password_hash FROM users WHERE email = ? AND role = 'student'", [email]);
-    const user = rows[0];
-    const ok = await bcrypt.compare(password, user ? user.password_hash : DUMMY_HASH);
-    if (!user || !ok) {
-      recordFailure(key);
-      // Same message for "no such email" and "wrong password", so emails cannot be guessed.
-      return res.status(401).json({ error: 'Incorrect email or password.' });
+    try {
+      const [rows] = await pool.query(
+        'SELECT id, name, email, phone, role, password_hash FROM users WHERE email = ? AND role = ?', [email, role]);
+      const user = rows[0];
+      const ok = await bcrypt.compare(password, user ? user.password_hash : DUMMY_HASH);
+      if (!user || !ok) {
+        recordFailure(key);
+        // Same message for "no such email" and "wrong password", so emails cannot be guessed.
+        return res.status(401).json({ error: 'Incorrect email or password.' });
+      }
+      failures.delete(key);
+      const csrfToken = await startSession(res, user.id, hours);
+      res.json({ user: publicUser(user), csrfToken });
+    } catch (err) {
+      console.error('login failed:', err.message);
+      res.status(500).json({ error: 'Something went wrong. Please try again.' });
     }
-    failures.delete(key);
-    await startSession(res, user.id);
-    res.json({ user: publicUser(user) });
-  } catch (err) {
-    console.error('login failed:', err.message);
-    res.status(500).json({ error: 'Something went wrong. Please try again.' });
-  }
-};
+  };
+}
+exports.login = loginFor('student', STUDENT_SESSION_HOURS);        // POST /api/auth/login
+exports.adminLogin = loginFor('admin', ADMIN_SESSION_HOURS);       // POST /api/auth/admin/login
 
 // POST /api/auth/logout  (deletes the session, so the old cookie stops working even if someone kept a copy)
 exports.logout = async (req, res) => {
@@ -120,8 +129,8 @@ exports.logout = async (req, res) => {
   res.json({ ok: true });
 };
 
-// GET /api/auth/me  ->  { user } or { user: null } (200 either way, so logged-out visitors see no console errors)
+// GET /api/auth/me  ->  { user, csrfToken } or { user: null } (200 either way, so logged-out visitors see no console errors)
 exports.me = (req, res) => {
   res.set('Cache-Control', 'no-store');
-  res.json({ user: req.user ? publicUser(req.user) : null });
+  res.json({ user: req.user ? publicUser(req.user) : null, csrfToken: req.user ? req.csrfToken : null });
 };

@@ -8,7 +8,7 @@ HTML/CSS/vanilla JS frontend (`public/`), Node.js + Express backend (`server/`),
 No frontend framework, no ORM, no TypeScript. Do not add dependencies without a clear need.
 
 ## Roles
-Student (browse, favourites, sees owner contact), Admin (approves/rejects listings). There are no landlord accounts: property owners use the public submission form (no login) and give their contact details in it.
+Student (browse, favourites, sees owner contact), Admin (approves, rejects and deletes listings). There are no landlord accounts: property owners use the public submission form (no login) and give their contact details in it.
 
 ## Rules
 - Normal database search/filtering must work on its own. Gemini natural-language search is an optional extra, added last.
@@ -16,6 +16,8 @@ Student (browse, favourites, sees owner contact), Admin (approves/rejects listin
 - The owner contact (name/phone/email on the listing) is visible only to logged-in students, and the API must not return it to anyone else.
 - Login: random token in an HttpOnly, SameSite=Lax cookie; only its SHA-256 hash is stored (`sessions` table). Passwords are bcrypt hashes. Protect routes with `requireRole(...)`; the frontend's saved `cn_user` is only a display copy, the server decides access.
 - Uploads (`POST /api/submissions`, multer): JPG/PNG only, checked by file contents, max 5 photos of 2 MB, random filenames, stored in `uploads/` with the relative path in `listing_images.file_path`. Files are written only after the whole submission is valid, and removed again if the database step fails.
+- Admin: the only admin is created by `db/seed.js` from `.env` (no admin registration). Admin login is `POST /api/auth/admin/login` (8-hour session). Everything under `/api/admin` needs `requireRole('admin')`, and every change also needs the CSRF token (`X-CSRF-Token`, from `/api/auth/me`) and a same-site Origin. Admin pages (`/admin/*.html`) are only served to a logged-in admin.
+- Photos of listings that are not public (pending, rejected, taken) are only served to a logged-in admin (`GET /uploads/:name` checks the listing).
 - Validate input on every API endpoint (plain checks, no validation library).
 - SQL: always `?` placeholders, never string-built queries.
 - Deleting a listing (admin): DB rows cascade, but image files do not. Read `file_path` from `listing_images` first, delete rows, then `fs.unlink` each file.

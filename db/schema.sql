@@ -77,6 +77,7 @@ CREATE TABLE favourites (
 -- so a leaked database cannot be used to log in. Logging out deletes the row.
 CREATE TABLE sessions (
   token_hash CHAR(64) NOT NULL,
+  csrf_token CHAR(64) NOT NULL,                  -- random value the pages must send back on admin changes (CSRF protection)
   user_id    INT UNSIGNED NOT NULL,
   expires_at DATETIME NOT NULL,
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
