@@ -1,1 +1,29 @@
-<!-- Property details page: images, rent, location, amenities, landlord contact. -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" href="/assets/icons/favicon.svg" type="image/svg+xml">
+  <title>Property · CampusNest</title>
+  <link rel="stylesheet" href="/assets/css/main.css">
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header id="site-header"></header>
+<main id="main" class="wrap"><div id="view"></div></main>
+<dialog class="lightbox" id="lightbox" aria-label="Photo viewer">
+  <div class="lightbox-inner">
+    <div class="lightbox-top"><span id="lb-count"></span><button class="lb-btn" type="button" id="lb-close" aria-label="Close photos"></button></div>
+    <div class="stage">
+      <button class="lb-btn prev" type="button" id="lb-prev" aria-label="Previous photo"></button>
+      <img id="lb-img" src="" alt="">
+      <button class="lb-btn next" type="button" id="lb-next" aria-label="Next photo"></button>
+    </div>
+    <p class="lightbox-cap">Sample photograph for demonstration. It does not show the actual property.</p>
+  </div>
+</dialog>
+<footer id="site-footer"></footer>
+<script src="/assets/js/main.js"></script>
+<script src="/assets/js/property.js"></script>
+</body>
+</html>

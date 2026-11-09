@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" href="/assets/icons/favicon.svg" type="image/svg+xml">
+  <title>Your favourites · CampusNest</title>
+  <link rel="stylesheet" href="/assets/css/main.css">
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header id="site-header"></header>
+<main id="main" class="wrap">
+  <div class="page-head">
+    <h1>Your favourites</h1>
+    <p class="muted" id="count"></p>
+  </div>
+  <div class="grid" id="list" style="padding-bottom:var(--s6)"></div>
+</main>
+<footer id="site-footer"></footer>
+<script src="/assets/js/main.js"></script>
+<script>
+  if (requireRole('student')) {
+    const draw = () => {
+      const favs = getFavs();
+      // Only listings that are still public (approved and available) are shown.
+      const list = getListings().filter(l => isPublic(l) && favs.includes(l.id));
+      $('#count').textContent = list.length ? list.length + (list.length === 1 ? ' saved listing' : ' saved listings') : 'Listings you save appear here.';
+      $('#list').innerHTML = list.length ? list.map(l => cardHTML(l)).join('') :
+        `<div class="state">${icon('heart', 32)}<h3>No favourites yet</h3><p class="muted">Tap the heart on a listing to save it here and compare later.</p><a class="btn" href="/browse.html">Browse listings</a></div>`;
+    };
+    draw();
+    document.addEventListener('favchange', draw);
+  }
+</script>
+</body>
+</html>

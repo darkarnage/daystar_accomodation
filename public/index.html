@@ -3,10 +3,113 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Daystar Accommodation Finder</title>
+  <link rel="icon" href="/assets/icons/favicon.svg" type="image/svg+xml">
+  <title>CampusNest · Find a place to call home near Daystar University</title>
+  <meta name="description" content="Student rooms, bedsits and hostels around Athi River. Search by area, room type and rent.">
+  <link rel="preload" href="/assets/fonts/dm-sans.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="/assets/css/main.css">
 </head>
 <body>
-  <h1>Daystar Accommodation Finder</h1>
-  <p>Setup works. Home page coming in Phase 3.</p>
+<a class="skip" href="#main">Skip to content</a>
+<header id="site-header"></header>
+<main id="main">
+
+<section class="hero">
+  <div class="wrap hero-grid">
+    <div>
+      <h1>Find a place to <em>call home.</em></h1>
+      <p class="lead">Student rooms, bedsits and hostels around Athi River, close to Daystar University. Compare rent and distance, then contact the owner directly.</p>
+      <form class="hero-search" action="/browse.html" role="search">
+        <div class="row1">
+          <div class="input-icon"><span id="ico-search"></span>
+            <input type="search" name="q" placeholder="Area or keyword, e.g. Mlolongo" aria-label="Area or keyword"></div>
+          <button class="btn" type="submit">Search</button>
+        </div>
+        <div class="row2">
+          <select name="type" aria-label="Room type">
+            <option value="">Any room type</option>
+            <option value="single">Single room</option><option value="bedsit">Bedsit</option>
+            <option value="one_bedroom">One bedroom</option><option value="shared">Shared room</option><option value="hostel">Hostel</option>
+          </select>
+          <select name="maxRent" aria-label="Maximum rent">
+            <option value="">Any rent</option>
+            <option value="4000">Up to KES 4,000</option><option value="6000">Up to KES 6,000</option>
+            <option value="8000">Up to KES 8,000</option><option value="12000">Up to KES 12,000</option><option value="20000">Up to KES 20,000</option>
+          </select>
+        </div>
+      </form>
+      <ul class="hero-points" id="hero-points"></ul>
+    </div>
+    <figure class="hero-photo"><img src="/assets/images/student-room.jpg" alt="A student room with a bed beside a bright window" width="1280" height="960" fetchpriority="high"></figure>
+  </div>
+</section>
+
+<section class="section-tight" style="padding-top:0">
+  <div class="wrap">
+    <div class="row-head"><h2>Closest to campus</h2><a class="text-link" href="/browse.html?sort=distance">See all listings <span id="ico-arrow"></span></a></div>
+    <div class="feature-grid" id="featured"></div>
+  </div>
+</section>
+
+<section class="section how">
+  <div class="wrap">
+    <h2>How CampusNest works</h2>
+    <div class="steps">
+      <div class="step"><span class="n">1</span><div><h3>Search</h3><p>Filter by rent, room type, amenities and distance to the Daystar gate.</p></div></div>
+      <div class="step"><span class="n">2</span><div><h3>Sign up as a student</h3><p>A free account lets you save favourites and see the owner's phone and email.</p></div></div>
+      <div class="step"><span class="n">3</span><div><h3>Call and visit</h3><p>Contact the owner directly and see the place in person before you pay.</p></div></div>
+    </div>
+  </div>
+</section>
+
+<section class="trust">
+  <div class="wrap trust-grid">
+    <div>
+      <h2>Every listing is checked before you see it</h2>
+      <p>Anyone can submit a property, but nothing appears on CampusNest until an admin has reviewed it. Edits are checked again.</p>
+      <p><a href="/about.html#safety">Read our safety tips</a></p>
+    </div>
+    <ul class="trust-list" id="trust-list"></ul>
+  </div>
+</section>
+
+<section class="section">
+  <div class="wrap">
+    <div class="owner-cta">
+      <img src="/assets/images/exterior-apartments-sm.jpg" alt="Brick apartment buildings along a street" loading="lazy" width="640" height="480">
+      <div class="text">
+        <h2>Own a property near campus?</h2>
+        <p class="lead" style="margin:0">List it for free. Tell students about your rooms, add photos and we'll review it before it goes live.</p>
+        <div class="actions"><a class="btn" href="/submit-property.html">List a property</a><a class="btn btn-secondary" href="/about.html">How listing works</a></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+</main>
+<footer id="site-footer"></footer>
+<script src="/assets/js/main.js"></script>
+<script>
+  // Small icons that live inside static markup.
+  $('#ico-search').outerHTML = icon('search', 20);
+  $('#ico-arrow').outerHTML = icon('arrow', 18);
+  $('#hero-points').innerHTML = [['checkCircle', 'Every listing reviewed'], ['lock', 'Owner contacts for students'], ['route', 'Distance to campus shown']]
+    .map(([i, t]) => `<li>${icon(i, 20)}${t}</li>`).join('');
+  $('#trust-list').innerHTML = [
+    ['checkCircle', 'Reviewed by an admin', 'Listings stay hidden until they are approved.'],
+    ['lock', 'Contacts for students only', 'Owner phone numbers and emails are shown to logged-in students.'],
+    ['shield', 'Safety first', 'Visit before you pay, and never send a deposit to someone you have not met.'],
+  ].map(([i, t, d]) => `<li><span class="ico">${icon(i, 20)}</span><div><b>${t}</b><span>${d}</span></div></li>`).join('');
+
+  // Featured: the 3 closest approved, available listings. One big card and two smaller ones.
+  const draw = () => {
+    const best = getListings().filter(isPublic).sort((a, b) => a.distance - b.distance).slice(0, 3);
+    $('#featured').innerHTML = best.length
+      ? cardHTML(best[0], 'card-feature') + `<div class="feature-side">${best.slice(1).map(l => cardHTML(l, 'card-row')).join('')}</div>`
+      : '<div class="state"><h3>No listings yet</h3><p class="muted">Check back soon.</p></div>';
+  };
+  draw();
+  document.addEventListener('favchange', draw);
+</script>
 </body>
 </html>

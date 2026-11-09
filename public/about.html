@@ -1,1 +1,50 @@
-<!-- About CampusNest. -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" href="/assets/icons/favicon.svg" type="image/svg+xml">
+  <title>About · CampusNest</title>
+  <link rel="stylesheet" href="/assets/css/main.css">
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header id="site-header"></header>
+<main id="main">
+  <div class="wrap">
+    <section class="about-hero">
+      <div>
+        <h1>Student housing, made easier to find</h1>
+        <p class="lead">CampusNest helps students find safe, affordable places to live near Daystar University, Athi River, and helps property owners reach students directly.</p>
+        <a class="btn" href="/browse.html">Browse accommodation</a>
+      </div>
+      <img src="/assets/images/exterior-brick.jpg" alt="Brick student residence building" width="1280" height="960">
+    </section>
+
+    <section class="about-block"><h2>For students</h2>
+      <div><p>Search by rent, room type, amenities and distance to campus. Browsing is open to everyone. Create a free account to save favourites and see the owner's phone number and email.</p>
+        <a class="text-link" href="/register.html">Create a student account</a></div></section>
+
+    <section class="about-block"><h2>For property owners</h2>
+      <div><p>No account needed. Use the listing form to submit your property with photos and your contact details. An admin checks each listing before it appears, and edited listings are checked again.</p>
+        <a class="text-link" href="/submit-property.html">List a property</a></div></section>
+
+    <section class="about-block"><h2>How we check listings</h2>
+      <div><p>Every submission starts as <b>pending</b>. An admin reviews the details and either approves it or rejects it with a reason. Only approved listings that are still available appear on CampusNest.</p></div></section>
+
+    <section class="about-block" id="safety"><h2>Safety tips</h2>
+      <div class="safety"><ul>
+        <li id="s1"></li><li id="s2"></li><li id="s3"></li>
+      </ul></div></section>
+
+    <p class="muted" style="padding:var(--s5) 0 0">CampusNest began as a Daystar University group project and is independently run. <a href="/credits.html">Photo credits</a></p>
+  </div>
+</main>
+<footer id="site-footer"></footer>
+<script src="/assets/js/main.js"></script>
+<script>
+  ['Always visit the place before paying anything.', 'Go with a friend and ask for a written agreement.', 'Never pay a deposit to someone you have not met.']
+    .forEach((t, i) => { $('#s' + (i + 1)).innerHTML = icon('shield', 22) + '<span>' + t + '</span>'; });
+</script>
+</body>
+</html>

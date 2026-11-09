@@ -1,1 +1,31 @@
-<!-- Admin login page. -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" href="/assets/icons/favicon.svg" type="image/svg+xml">
+  <title>Admin log in · CampusNest</title>
+  <link rel="stylesheet" href="/assets/css/main.css">
+</head>
+<body>
+<main id="main" class="auth-solo">
+  <div class="auth-card">
+    <a class="brand" href="/" id="brand" aria-label="CampusNest home"></a>
+    <h1>Admin log in</h1>
+    <p class="sub">For CampusNest administrators who review listings.</p>
+    <div id="msg"></div>
+    <form id="admin-login-form" novalidate>
+      <div class="field"><label for="email">Admin email</label><input id="email" name="email" type="email" autocomplete="username"><p class="err"></p></div>
+      <div class="field"><label for="password">Password</label><input id="password" name="password" type="password" autocomplete="current-password"><p class="err"></p></div>
+      <button class="btn btn-block" type="submit">Log in</button>
+    </form>
+    <div class="demo-box"><b>Demo mode</b>: use <code>admin@campusnest.test</code> with any password.
+      <div class="row"><button type="button" class="btn btn-secondary btn-sm" data-demo="admin">Log in as demo admin</button></div></div>
+    <p class="form-foot"><a href="/">Back to the public site</a></p>
+  </div>
+</main>
+<script src="/assets/js/main.js"></script>
+<script>$('#brand').innerHTML = LOGO;</script>
+<script src="/assets/js/auth.js"></script>
+</body>
+</html>
