@@ -85,7 +85,7 @@ const ICONS = {
   bus: '<path d="M5 16V6a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v10zM5 11h14M7 16v3M17 16v3M8.500 13.500h.01M15.500 13.500h.01"/>',
   mapping: '<path d="M9 5 3 7v12l6-2 6 2 6-2V5l-6 2zM9 5v12M15 7v12"/>',
   camera: '<path d="M4 8h3l2-3h6l2 3h3v11H4zM12 17a3.500 3.500 0 1 0 0-7 3.500 3.500 0 0 0 0 7Z"/>',
-  sparkle: '<path d="M12 4v4M12 16v4M4 12h4M16 12h4"/>',
+  sparkle: '<path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9zM19 3v4M17 5h4"/>',
   home: '<path d="m3 11 9-7 9 7M5 10v10h14V10"/>',
   trash: '<path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/>',
 };

@@ -16,6 +16,19 @@
     <p class="muted">Approved student rooms near Daystar University, Athi River.</p>
   </div>
 
+  <!-- AI-assisted search: only shown when the server has a Gemini key (see browse.js). The normal search below works without it. -->
+  <section class="ai-box" id="ai-box" aria-labelledby="ai-title" hidden>
+    <form id="ai-form" novalidate>
+      <label id="ai-title" for="ai-q"><span id="ico-ai"></span>Describe what you're looking for <span class="ai-tag">AI-assisted</span></label>
+      <div class="ai-row">
+        <input class="input" id="ai-q" type="text" maxlength="200" autocomplete="off" placeholder="e.g. single room under 6000 within 2 km">
+        <button class="btn" type="submit" id="ai-go">Find rooms</button>
+      </div>
+    </form>
+    <p class="ai-hint">Your sentence is sent to Google's Gemini to choose the filters. Results still come from our normal search, and no listing or contact details are shared.</p>
+    <div class="ai-note" id="ai-note" role="status" aria-live="polite"></div>
+  </section>
+
   <div class="browse-bar">
     <div class="input-icon"><span id="ico-search"></span>
       <input class="input" id="q" name="q" form="filters" type="search" placeholder="Search by area or keyword" aria-label="Search by area or keyword"></div>

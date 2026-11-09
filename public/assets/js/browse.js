@@ -5,13 +5,21 @@ const sortSel = $('#sort');
 $('#ico-search').outerHTML = icon('search', 20);
 $('#ico-filter').outerHTML = icon('filter', 20);
 $('#ico-close').outerHTML = icon('close', 24);
+$('#ico-ai').outerHTML = icon('sparkle', 18);
 
 $('#amenity-checks').innerHTML = AMENITIES.slice(0, 7).map(a =>
   `<label class="check"><input type="checkbox" name="amenity" value="${esc(a)}"> ${esc(a)}</label>`).join('');
 
 // Fill the form from the URL (e.g. coming from the home search).
 const params = new URLSearchParams(location.search);
-['q', 'type', 'maxRent', 'maxDist'].forEach(k => { if (params.get(k)) form.elements[k].value = params.get(k); });
+// The distance menu has a few fixed choices. If we are given another number (from the URL or from AI search), add it as a choice.
+function setDistance(value) {
+  const select = form.elements.maxDist;
+  if (![...select.options].some(o => o.value === String(value))) select.add(new Option(`Within ${value} km`, String(value)));
+  select.value = String(value);
+}
+['q', 'type', 'maxRent'].forEach(k => { if (params.get(k)) form.elements[k].value = params.get(k); });
+if (Number(params.get('maxDist')) > 0) setDistance(params.get('maxDist'));
 if (params.get('sort')) sortSel.value = params.get('sort');
 params.getAll('amenity').forEach(a => { const box = $(`[name=amenity][value="${CSS.escape(a)}"]`); if (box) box.checked = true; });
 
@@ -73,11 +81,11 @@ async function render() {
 
 // Typing in the search box waits a moment so we do not send a request for every key press.
 let timer;
-form.addEventListener('input', render);
+form.addEventListener('input', () => { clearAiNote(); render(); });
 // The search box sits outside the <form> (it is linked with form="filters"), so its typing is listened to separately.
-$('#q').addEventListener('input', () => { clearTimeout(timer); timer = setTimeout(render, 250); });
+$('#q').addEventListener('input', () => { clearAiNote(); clearTimeout(timer); timer = setTimeout(render, 250); });
 form.addEventListener('submit', e => e.preventDefault());
-form.addEventListener('reset', () => setTimeout(render));
+form.addEventListener('reset', () => { clearAiNote(); setTimeout(render); });
 sortSel.addEventListener('change', render);
 
 // Chips and the empty-state button remove filters.
@@ -105,6 +113,52 @@ scrim.addEventListener('click', () => setSheet(false));
 document.addEventListener('keydown', e => { if (e.key === 'Escape' && form.classList.contains('open')) setSheet(false); });
 // If the window grows past the mobile size while the sheet is open, close it.
 matchMedia('(min-width: 901px)').addEventListener('change', e => { if (e.matches) setSheet(false); });
+
+// ---------- AI-assisted search (optional extra) ----------
+// The box is shown only if the server has a Gemini key. The server turns the sentence into filters, and this page
+// puts those filters into the normal filter form, so the results come from the same search as everything else.
+// If AI is off or fails, nothing else on the page is affected.
+const aiBox = $('#ai-box'), aiNote = $('#ai-note');
+function clearAiNote() { aiNote.textContent = ''; }
+apiGet('/api/ai-search/status').then(s => { if (s?.enabled) aiBox.hidden = false; }).catch(() => {});
+
+// Fill the filter form from the filters the server sent back, then search.
+function applyAiFilters(f) {
+  form.reset();                         // start from a clean slate
+  sortSel.value = f.sort || '';
+  $('#q').value = f.q || '';
+  form.elements.type.value = f.type || '';
+  form.elements.maxRent.value = f.maxRent || '';
+  if (f.maxDist) setDistance(f.maxDist);
+  (f.amenity || []).forEach(a => { const box = $(`[name=amenity][value="${CSS.escape(a)}"]`); if (box) box.checked = true; });
+  return render();
+}
+
+$('#ai-form').addEventListener('submit', async e => {
+  e.preventDefault();
+  const text = $('#ai-q').value.trim();
+  if (text.length < 3) { aiNote.textContent = 'Describe what you are looking for, for example "single room under 6000 within 2 km".'; return; }
+  const button = $('#ai-go');
+  button.disabled = true; button.classList.add('is-loading'); aiNote.textContent = '';
+  let status = 0, data = {};
+  try {
+    const res = await fetch('/api/ai-search', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ query: text }) });
+    status = res.status; data = await res.json().catch(() => ({}));
+  } catch { /* network problem: status stays 0 */ }
+  button.disabled = false; button.classList.remove('is-loading');
+
+  if (status !== 200) {
+    aiNote.textContent = status === 0 ? 'Cannot reach the server. You can still use the filters below.' : (data.error || 'AI search is not available right now. You can still use the filters below.');
+    return;
+  }
+  if (!data.understood?.length) {
+    aiNote.textContent = "I couldn't turn that into filters. Try mentioning a room type, a budget or a distance, or use the filters below.";
+    return;
+  }
+  await applyAiFilters(data.filters);
+  aiNote.innerHTML = `<b>Showing:</b> ${data.understood.map(t => `<span class="ai-chip">${esc(t)}</span>`).join(' ')} <span class="muted small">Change them with the filters below.</span>`;
+  aiNote.scrollIntoView({ behavior: 'smooth', block: 'start' });   // the note and the results below it
+});
 
 // First load: show placeholders until the API answers.
 $('#results').innerHTML = '<div class="card card-skel"></div>'.repeat(6);
