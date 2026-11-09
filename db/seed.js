@@ -11,9 +11,13 @@ const AMENITIES = [
 ];
 
 // Demo listings are only inserted when the listings table is empty, so re-running never duplicates them.
+// If they already exist, only their sample photos are refreshed (see below).
 async function seedListings() {
   const [[{ n }]] = await pool.query('SELECT COUNT(*) AS n FROM listings');
-  if (n > 0) return console.log(`Listings: ${n} already exist, demo listings skipped`);
+  if (n > 0) {
+    console.log(`Listings: ${n} already exist, demo listings skipped`);
+    return refreshDemoPhotos();
+  }
   const conn = await pool.getConnection();
   try {
     await conn.beginTransaction();
@@ -50,6 +54,25 @@ async function seedDemoStudent() {
     `INSERT IGNORE INTO users (name, email, password_hash, phone, role)
      VALUES ('Faith Wanjiru', 'faith@student.daystar.ac.ke', ?, '0700 000 001', 'student')`, [hash]);
   console.log(`Demo student ${r.affectedRows ? 'created' : 'already exists'}: faith@student.daystar.ac.ke (password: demo-password)`);
+}
+
+// Point the demo listings at the current sample photos in public/assets/images.
+// Only listings whose id AND title still match the demo data are touched, and only their sample-photo rows
+// (file_path starting "assets/"), so photos uploaded through the submission form are never changed.
+async function refreshDemoPhotos() {
+  let updated = 0;
+  for (const l of DEMO_LISTINGS) {
+    const [rows] = await pool.query('SELECT id FROM listings WHERE id = ? AND title = ?', [l.id, l.title]);
+    if (!rows.length) continue;
+    const [current] = await pool.query("SELECT file_path FROM listing_images WHERE listing_id = ? AND file_path LIKE 'assets/%' ORDER BY id", [l.id]);
+    if (current.map((r) => r.file_path).join() === l.images.join()) continue;   // already up to date
+    await pool.query("DELETE FROM listing_images WHERE listing_id = ? AND file_path LIKE 'assets/%'", [l.id]);
+    for (const [i, path] of l.images.entries()) {
+      await pool.query('INSERT INTO listing_images (listing_id, file_path, is_primary) VALUES (?, ?, ?)', [l.id, path, i === 0]);
+    }
+    updated++;
+  }
+  console.log(`Demo photos: ${updated} listing(s) updated`);
 }
 
 async function main() {

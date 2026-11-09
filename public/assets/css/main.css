@@ -169,7 +169,8 @@ input[type=checkbox], input[type=radio] { accent-color: var(--forest); width: 1.
 .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(270px, 1fr)); gap: var(--s5); }
 .card { background: var(--white); border: 1px solid var(--stone); border-radius: var(--r); overflow: hidden; position: relative; display: flex; flex-direction: column; transition: border-color .15s, box-shadow .15s; }
 .card:hover { border-color: #B8B2A3; box-shadow: 0 4px 14px rgba(51, 59, 54, .08); }
-.card-img { display: block; aspect-ratio: 4 / 3; background: var(--stone); overflow: hidden; }
+.card-img { display: block; aspect-ratio: 4 / 3; background: var(--stone); overflow: hidden; position: relative; }
+.sample-tag { position: absolute; left: .6rem; bottom: .6rem; background: rgba(255, 255, 255, .92); color: var(--charcoal); border-radius: var(--r-sm); padding: .1rem .5rem; font: 500 .75rem/1.4 var(--font-head); }
 .card-img img { width: 100%; height: 100%; object-fit: cover; }
 .card-body { padding: var(--s4); display: flex; flex-direction: column; flex: 1; }
 .price { font: 700 1.25rem/1.2 var(--font-head); color: var(--charcoal); margin: 0 0 var(--s1); }
@@ -203,7 +204,7 @@ input[type=checkbox], input[type=radio] { accent-color: var(--forest); width: 1.
 .hero-points { display: flex; flex-wrap: wrap; gap: var(--s2) var(--s5); list-style: none; padding: 0; margin: var(--s5) 0 0; font: 500 .9375rem var(--font-head); }
 .hero-points li { display: flex; align-items: center; gap: .45rem; }
 .hero-points .icon { color: var(--forest); }
-.hero-photo { margin: 0; border-radius: var(--r); overflow: hidden; aspect-ratio: 5 / 4; background: var(--stone); }
+.hero-photo { position: relative; margin: 0; border-radius: var(--r); overflow: hidden; aspect-ratio: 5 / 4; background: var(--stone); }
 .hero-photo img { width: 100%; height: 100%; object-fit: cover; }
 @media (max-width: 900px) {
   .hero { padding: var(--s5) 0 var(--s7); }
@@ -379,7 +380,7 @@ input[type=checkbox], input[type=radio] { accent-color: var(--forest); width: 1.
 .lightbox-cap { text-align: center; font-size: .875rem; color: #C9D2CC; }
 @media (max-width: 600px) { .lightbox .stage { grid-template-columns: 1fr; } .lightbox .lb-btn.prev, .lightbox .lb-btn.next { display: none; } }
 
-/* ---------- content pages (about, contact, credits) ---------- */
+/* ---------- content pages (about, contact, photo sources) ---------- */
 .narrow { width: min(720px, 100% - 2rem); margin-inline: auto; }
 .page-intro { padding: var(--s7) 0 var(--s6); }
 .about-hero { display: grid; grid-template-columns: 1.1fr 1fr; gap: var(--s7); align-items: center; padding: var(--s7) 0; }
