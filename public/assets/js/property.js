@@ -141,6 +141,7 @@ function show(l, contactResult) {
       at = (n + photos.length) % photos.length;
       img.src = photos[at].full; img.alt = photos[at].alt;
       $('#lb-count').textContent = `Photo ${at + 1} of ${photos.length}`;
+      $('#lb-cap').textContent = photos[at].sample ? 'Sample photograph for demonstration. It does not show the actual property.' : '';
     };
     $('#gallery').addEventListener('click', e => {
       const t = e.target.closest('[data-i]');

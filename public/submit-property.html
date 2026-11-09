@@ -58,7 +58,7 @@
           <label class="upload"><input id="photos" name="photos" type="file" accept="image/jpeg,image/png" multiple><span id="ico-camera"></span><span>Choose photos</span><span class="hint">JPG or PNG, up to 5</span></label>
           <p class="err"></p>
           <div class="thumbs" id="preview"></div>
-          <p class="hint">Demo: photos are previewed here but not saved yet.</p>
+          <p class="hint">Your photos are uploaded when you submit the form.</p>
         </div>
       </div>
     </fieldset>
@@ -77,6 +77,8 @@
         </div>
       </div>
     </fieldset>
+
+    <div id="form-error" class="alert alert-error" role="alert" hidden></div>
 
     <div class="submit-bar">
       <p class="muted">Your listing will be <b>pending</b> until an admin approves it.</p>

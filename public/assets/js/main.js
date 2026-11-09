@@ -187,7 +187,7 @@ function photosOf(l) {
   const paths = l.images || (LISTING_PHOTOS[l.id] || []).map(k => imgUrl(k));
   return paths.map(p => {
     const sample = IMAGES[p.split('/').pop().replace('.jpg', '')];
-    return { full: p, small: sample ? p.replace('.jpg', '-sm.jpg') : p, alt: sample ? sample.alt : 'Photo of the property', sample: !!sample };
+    return { full: p, small: sample ? p.replace('.jpg', '-sm.jpg') : p, alt: sample ? sample.alt : 'Photo of ' + (l.title || 'the property'), sample: !!sample };
   });
 }
 
