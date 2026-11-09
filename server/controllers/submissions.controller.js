@@ -1,1 +1,1 @@
-// Controller: create, edit and delete a landlord's listings.
+// Controller: create a public property submission (status pending, with images and owner contact).

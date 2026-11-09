@@ -3,9 +3,10 @@ require('dotenv').config();
 const bcrypt = require('bcrypt');
 const pool = require('../server/db');
 
+// Must match the amenity names the frontend shows (AMENITIES in public/assets/js/main.js).
 const AMENITIES = [
-  'Wi-Fi', 'Water 24/7', 'Security', 'Parking', 'Prepaid electricity',
-  'Furnished', 'Private bathroom', 'Kitchen', 'Laundry',
+  'Wi-Fi', 'Water 24/7', 'Security guard', 'Fenced compound', 'Parking',
+  'Furnished', 'Own bathroom', 'Kitchen', 'Backup power', 'Near matatu stage',
 ];
 
 async function main() {

@@ -1,11 +1,11 @@
 # Project scaffold
 
-Placeholder files only: each new file has one comment describing its job. No features are implemented yet.
+The frontend in `public/` is a finished localStorage demo. The server files below are still placeholders: each has one comment describing its job, and they are being implemented in stages on the `backend-integration` branch.
 
 ```text
 design/              Google Stitch exports, one folder per area (see design/README.md)
 public/              Static frontend served by Express
-  *.html             Site pages (index, browse, property, login, register, submit-property, about, contact)
+  *.html             Site pages (index, browse, property, login, register, submit-property, favourites, about, contact, credits)
   admin/             Admin pages (login, dashboard, listings)
   assets/css|js      One stylesheet / script per area
   assets/images|icons
@@ -13,7 +13,7 @@ server/
   index.js, db.js    Existing: Express app and MySQL pool
   routes/            URL -> controller mapping (auth, listings, submissions, admin)
   controllers/       Request handling and database queries
-  middleware/        auth (cookie), role (permissions), upload (images)
+  middleware/        auth (cookie), role (student/admin), upload (images)
 db/                  schema.sql, seed.js (existing)
 uploads/             Uploaded listing images (not committed)
 ```

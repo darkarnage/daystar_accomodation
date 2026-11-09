@@ -1,1 +1,1 @@
-// Routes: landlord property submissions and management.
+// Routes: public property submission (no login).
