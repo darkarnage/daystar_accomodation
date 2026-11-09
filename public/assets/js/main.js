@@ -32,8 +32,21 @@ const kes = n => 'KES ' + Number(n).toLocaleString('en-KE');
 const $ = (sel, root = document) => root.querySelector(sel);
 const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
 
-// Only allow same-site redirects after login.
-function safeNext(raw) { return raw && /^\/(?!\/)/.test(raw) ? raw : '/'; }
+// Only allow same-site redirects after login (the ?next= address). Anything else becomes '/'.
+// Browsers treat a backslash like a slash and ignore tabs and line breaks inside an address, so "/\evil.com" and
+// "/<tab>/evil.com" would really mean "//evil.com" (another site). We refuse those characters, then let the browser's
+// own URL parser decide and accept only an address that stays on this site.
+// The original text is returned, not the parser's tidied-up version: tidying can turn "/.//evil.com" into "//evil.com".
+function safeNext(raw) {
+  if (typeof raw !== 'string' || !raw.startsWith('/')) return '/';
+  if (/[\\\u0000-\u001f\u007f]/.test(raw)) return '/';
+  try {
+    const url = new URL(raw, location.origin);
+    return url.origin === location.origin ? raw : '/';
+  } catch {
+    return '/';
+  }
+}
 
 function statusBadge(s) { return `<span class="badge badge-${s}">${s}</span>`; }
 
