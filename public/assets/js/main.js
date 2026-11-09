@@ -102,40 +102,35 @@ const LOGO_MARK = `<svg class="logo-mark" viewBox="0 0 32 32" width="30" height=
 const LOGO = `${LOGO_MARK}<span class="wordmark">Campus<b>Nest</b></span>`;
 
 // ---------- photos ----------
-// Sample photographs (see /credits.html). They are generic examples, NOT pictures of the listed properties.
-// Photos by Wikimedia Commons contributors, files in /assets/images (a -sm copy is used on cards).
+// Illustrative sample photographs: free stock photos from Pexels (Pexels License), NOT pictures of the listed properties.
+// Files are in /assets/images (a -sm copy is used on cards). Photographer and source page: /image-sources.html.
+const PHOTO_LICENSE = { name: 'Pexels License', url: 'https://www.pexels.com/license/' };
 const IMAGES = {
-  'bedroom-dark-wall': { alt: "Bedroom with a double bed and a dark patterned wall", by: "Shixart1985", license: "CC BY 2.0", page: "https://commons.wikimedia.org/wiki/File:Modern_bedroom_design_in_a_stylish_hotel_room_featuring_geometric_patterns_and_soft_linens.jpg" },
-  'study-laptop': { alt: "Student studying at a desk with a laptop", by: "English106", license: "CC BY 2.0", page: "https://commons.wikimedia.org/wiki/File:Female_student_writing_and_studying_at_dorm_room_desk.jpg" },
-  'dining-kitchenette': { alt: "Small kitchen and dining area in an apartment", by: "Apartman 218", license: "CC BY-SA 4.0", page: "https://commons.wikimedia.org/wiki/File:Apartment_218_kitchen_1.jpg" },
-  'bedroom-teal': { alt: "Bedroom with a teal bedspread", by: "Shixart1985", license: "CC BY 2.0", page: "https://commons.wikimedia.org/wiki/File:Cozy_bedroom_with_a_large_bed_and_simple_decor_in_a_modern_home.jpg" },
-  'exterior-brick': { alt: "Brick student residence building", by: "Sdkb", license: "CC BY-SA 4.0", page: "https://commons.wikimedia.org/wiki/File:Living_and_Learning_Residence_Hall,_Gallaudet_University.jpg" },
-  'bedroom-window': { alt: "Bedroom with a double bed beside a window", by: "Chris Olszewski", license: "CC BY-SA 4.0", page: "https://commons.wikimedia.org/wiki/File:Bedroom,_Interior_of_apartment_in_Brisbane,_2025,_02.jpg" },
-  'desk-shelf': { alt: "Study desk with shelving in a student room", by: "tomsky", license: "CC BY-SA 4.0", page: "https://commons.wikimedia.org/wiki/File:Dalian_University_in_2018_62.jpg" },
-  'kitchen-wood': { alt: "Kitchen with wooden cabinets", by: "Fanti Salms", license: "CC BY-SA 4.0", page: "https://commons.wikimedia.org/wiki/File:Kitchen_Layout_2.jpg" },
-  'exterior-block': { alt: "Brick and white apartment block", by: "Graham Robson\u00a0", license: "CC BY-SA 2.0", page: "https://commons.wikimedia.org/wiki/File:Student_Housing,_Leeds_-_geograph.org.uk_-_4705882.jpg" },
-  'living-blue-sofa': { alt: "Bright living room with a blue sofa", by: "Jaros\u0142aw Ceborski jarson", license: "CC0", page: "https://commons.wikimedia.org/wiki/File:Living_room_(Unsplash).jpg" },
-  'bedroom-lamps': { alt: "Bedroom with a double bed and bedside lamps", by: "Chris Olszewski", license: "CC BY-SA 4.0", page: "https://commons.wikimedia.org/wiki/File:Bedroom,_Interior_of_apartment_in_Brisbane,_2025,_01.jpg" },
-  'kitchen-dining-modern': { alt: "Modern kitchen and dining space", by: "Shixart1985", license: "CC BY 2.0", page: "https://commons.wikimedia.org/wiki/File:Modern_kitchen_and_dining_area_with_stylish_furnishings_and_natural_light_in_a_contemporary_home_setting.jpg" },
-  'living-leather-sofa': { alt: "Living room with a leather sofa", by: "Shixart1985", license: "CC BY 2.0", page: "https://commons.wikimedia.org/wiki/File:Modern_living_room_with_stylish_furniture_and_a_view_of_the_outdoors_in_a_cozy_apartment_setting.jpg" },
-  'bedroom-mountain': { alt: "Bedroom with a wooden headboard", by: "Shixart1985", license: "CC BY 2.0", page: "https://commons.wikimedia.org/wiki/File:Modern_bedroom_design_with_wooden_mountain_headboard_in_cozy_space.jpg" },
-  'exterior-modern': { alt: "Modern apartment building exterior", by: "Elekhh", license: "CC BY-SA 3.0", page: "https://commons.wikimedia.org/wiki/File:Barry_St_Student_Housing_Melbourne_2011.jpg" },
-  'hostel-bunks-bright': { alt: "Bright hostel room with bunk beds", by: "LorfHostelsChain", license: "CC BY-SA 4.0", page: "https://commons.wikimedia.org/wiki/File:Typical_dorm_room.jpg" },
-  'bunk-room': { alt: "Small room with a bunk bed", by: "Eliedion", license: "CC BY-SA 4.0", page: "https://commons.wikimedia.org/wiki/File:Efteling_Loonsche_Land_Hotel_themed_room_water_-_bunk_beds.jpg" },
-  'kitchen-shared': { alt: "Large shared kitchen", by: "Gausanchennai", license: "CC BY-SA 4.0", page: "https://commons.wikimedia.org/wiki/File:Kitchen_1.jpg" },
-  'exterior-apartments': { alt: "Row of brick apartment buildings", by: "Andre Carrotflower", license: "CC BY-SA 4.0", page: "https://commons.wikimedia.org/wiki/File:Colvin_Gardens_Apartments,_Buffalo,_New_York_-_20220902.jpg" },
-  'bunk-desk': { alt: "Room with a bunk bed and desk", by: "Forest and Kim Starr", license: "CC BY 3.0 us", page: "https://commons.wikimedia.org/wiki/File:Starr-130904-0497-bunk_bed_in_room-Kapahulu_Bunkhouse-Oahu_(24595176053).jpg" },
-  'bunk-plain': { alt: "Simple room with a bunk bed", by: "Tiemannl at English Wikipedia", license: "CC BY 2.5", page: "https://commons.wikimedia.org/wiki/File:WRA_Dorm.jpg" },
-  'kitchen-steel': { alt: "Kitchen with stainless steel appliances", by: "User:Gnangarra", license: "CC BY 2.5 au", page: "https://commons.wikimedia.org/wiki/File:Modern_kitchen_gnangarra.JPG" },
-  'bedroom-attic': { alt: "Bedroom under a pitched roof", by: "Category:Government of the United States Virgin Islands", license: "Public domain", page: "https://commons.wikimedia.org/wiki/File:USVI_IMG_5201_-_Bright_modern_bedroom_with_a_white_vaulted_ceiling_a_colorful_zigzag_rug_and_a_four-poster_bed.jpg" },
-  'studio-living': { alt: "Studio apartment living and kitchen area", by: "IFERREIRO", license: "CC BY-SA 3.0", page: "https://commons.wikimedia.org/wiki/File:Flat.jpg" },
-  'student-room': { alt: "Student room with a bed beside a window", by: "Kleon3", license: "CC BY-SA 4.0", page: "https://commons.wikimedia.org/wiki/File:2020_The_Student_Hotel_Maastricht_09.jpg" },
-  'hostel-tv': { alt: "Hostel room with bunk beds and a television", by: "Shixart1985", license: "CC BY 2.0", page: "https://commons.wikimedia.org/wiki/File:Modern_bedroom_with_bunked_bed_and_small_table_with_chairs_next_to_a_tv_on_the_wall.jpg" },
-  'living-white-sofa': { alt: "Living room with a white sofa", by: "Reiner Kraft from Gilroy, USA", license: "CC BY 2.0", page: "https://commons.wikimedia.org/wiki/File:Living_room_Germany_2006.jpg" },
-  'studio-kitchenette': { alt: "Small studio with a sofa and kitchenette", by: "Icade", license: "CC BY-SA 4.0", page: "https://commons.wikimedia.org/wiki/File:Montpellier_studio_icade.jpg" },
-  'living-bright': { alt: "Bright living area", by: "Artchapiz", license: "CC0", page: "https://commons.wikimedia.org/wiki/File:Artchapiz1_artchapiz.es_apartment_rental_granada_01.jpg" },
+  "bedroom-neutral-door": { alt: "Bedroom with a bed, a rug and an open door", by: "Lisa Anna", title: "Interior of a Modern, Minimalist Bedroom with a Single Bed", page: "https://www.pexels.com/photo/interior-of-a-modern-minimalist-bedroom-with-a-single-bed-19836795/" },
+  "single-bed-desk-white": { alt: "Bright room with a single bed and a desk by the window", by: "Mateusz Pielech", title: "Minimalist Modern Bedroom with White Decor", page: "https://www.pexels.com/photo/minimalist-modern-bedroom-with-white-decor-39338470/" },
+  "bedroom-desk-tv": { alt: "Bedroom with a bed, a desk and a monitor", by: "Lisa Anna", title: "Interior of a Modern Bedroom with a Desk and a Computer", page: "https://www.pexels.com/photo/interior-of-a-modern-bedroom-with-a-desk-and-a-computer-19866422/" },
+  "bedroom-grey-window": { alt: "Grey bedroom with a window, a bed and a wall shelf", by: "tn2222 Koh", title: "A Grey Bedroom", page: "https://www.pexels.com/photo/a-grey-bedroom-6289053/" },
+  "bed-desk-wall-unit": { alt: "Room with a bed and a long desk with shelves above", by: "Medhat Ayad", title: "White and Black Desk Beside Bed and Window", page: "https://www.pexels.com/photo/apartment-bed-bedroom-book-shelves-439227/" },
+  "room-bed-desk-window": { alt: "Small room with a single bed and a desk beside a window", by: "Alexander F Ungerer", title: "Room with a Bed and a Desk in an Apartment", page: "https://www.pexels.com/photo/room-with-a-bed-and-a-desk-in-an-apartment-20725943/" },
+  "loft-studio-desk": { alt: "Studio with a sleeping area, a dining table and a bookshelf", by: "Lisa Anna", title: "Cozy Bedroom with Bed and Wooden Desk", page: "https://www.pexels.com/photo/cozy-bedroom-with-bed-and-wooden-desk-19857234/" },
+  "studio-open-plan-sofa": { alt: "Open-plan studio with a corner sofa, a TV and a kitchen", by: "Max Vakhtbovych", title: "Cozy Studio Apartment Design", page: "https://www.pexels.com/photo/cozy-studio-apartment-design-8082559/" },
+  "studio-brick-window": { alt: "Studio with a brick wall, a window and a breakfast counter", by: "Max Vakhtbovych", title: "Interior of contemporary studio apartment in daytime", page: "https://www.pexels.com/photo/interior-of-contemporary-studio-apartment-in-daytime-6447393/" },
+  "studio-brick-kitchen": { alt: "Studio kitchen and dining area with a brick wall", by: "Max Vakhtbovych", title: "Interior Design of Small Studio Apartment", page: "https://www.pexels.com/photo/interior-design-of-small-studio-apartment-6969987/" },
+  "studio-kitchen-bed": { alt: "Studio with a kitchen counter and a sleeping area", by: "Max Vakhtbovych", title: "Interior modern apartment with kitchen and bedroom", page: "https://www.pexels.com/photo/interior-modern-apartment-with-kitchen-and-bedroom-6447384/" },
+  "studio-counter-view": { alt: "Studio with a counter and stools by a large window", by: "Max Vakhtbovych", title: "Interior of miniature modern apartment with furniture", page: "https://www.pexels.com/photo/interior-of-miniature-modern-apartment-with-furniture-6447390/" },
+  "studio-white-bright": { alt: "Bright white studio with a dining table and a mirror", by: "Max Vakhtbovych", title: "Modern studio apartment with white furniture and mirror in sunlight", page: "https://www.pexels.com/photo/modern-studio-apartment-with-white-furniture-and-mirror-in-sunlight-6890395/" },
+  "kitchen-small-rug": { alt: "Small kitchen with white cabinets and a rug", by: "Alexander F Ungerer", title: "Rug in a Small Kitchen", page: "https://www.pexels.com/photo/rug-in-a-small-kitchen-19776462/" },
+  "kitchen-green": { alt: "Kitchen with green cabinets and a breakfast bar", by: "Erdem ÖZDEMİR", title: "Interior of a Modern Kitchen", page: "https://www.pexels.com/photo/interior-of-a-modern-kitchen-16056401/" },
+  "kitchen-open-plan": { alt: "Open-plan kitchen with a counter and bar stools", by: "Max Vakhtbovych", title: "Contemporary apartment with open space kitchen", page: "https://www.pexels.com/photo/contemporary-apartment-with-open-space-kitchen-7031214/" },
+  "hostel-bunk-beds": { alt: "Hostel room with wooden bunk beds and a desk", by: "cottonbro studio", title: "A Room in a Hostel", page: "https://www.pexels.com/photo/a-room-in-a-hostel-5137980/" },
+  "living-grey-sofa": { alt: "Living room with a grey sofa and a round table", by: "Max Vakhtbovych", title: "Interior of modern apartment living room", page: "https://www.pexels.com/photo/interior-of-modern-apartment-living-room-6588599/" },
+  "living-orange-sofa": { alt: "Living room with an orange sofa and a dining area", by: "Max Vakhtbovych", title: "Comfy sofa in stylish apartment with living room and kitchen", page: "https://www.pexels.com/photo/comfy-sofa-in-stylish-apartment-with-living-room-and-kitchen-6284236/" },
+  "living-dark-sofa": { alt: "Living room with a dark sofa and a round coffee table", by: "Max Vakhtbovych", title: "Interior of apartment with furniture", page: "https://www.pexels.com/photo/interior-of-apartment-with-furniture-6527037/" },
+  "living-light-sofa": { alt: "Bright living room with a light corner sofa", by: "Max Vakhtbovych", title: "Sofa with Pillows in Living Room", page: "https://www.pexels.com/photo/sofa-with-pillows-in-living-room-11701115/" },
+  "exterior-balcony-block": { alt: "Apartment block with balconies", by: "George Becker", title: "Photography of Orange and Gray Building", page: "https://www.pexels.com/photo/photography-of-orange-and-gray-building-129494/" },
+  "desk-laptop-notebook": { alt: "Desk with a laptop and a notebook", by: "Mikhail Nilov", title: "Minimalist Workspace with Laptop and Notebook", page: "https://www.pexels.com/photo/laptop-notebook-office-pen-7594479/" },
 };
-const imgUrl = (key, small) => `/assets/images/${key}${small ? '-sm' : ''}.jpg`;   // used by the credits page
+const imgUrl = (key, small) => `/assets/images/${key}${small ? '-sm' : ''}.jpg`;   // used by the photo sources page
 
 // Photos of a listing as [{ full, small, alt, sample }].
 // Listings from the API carry image paths. Sample photos have a smaller -sm copy for cards; uploaded photos do not.
@@ -169,7 +164,7 @@ function cardHTML(l, variant = '') {
   const ams = l.amenities.slice(0, 2).map(a =>
     `<span class="am">${icon(AMENITY_ICON[a] || 'check', 16)}${esc(a)}</span>`).join('');
   return `<article class="card ${variant}">
-    <a class="card-img" href="/property.html?id=${l.id}" tabindex="-1" aria-hidden="true">${photoHTML(l, 0, variant !== 'card-feature')}</a>
+    <a class="card-img" href="/property.html?id=${l.id}" tabindex="-1" aria-hidden="true">${photoHTML(l, 0, variant !== 'card-feature')}${photosOf(l)[0]?.sample ? '<span class="sample-tag">Sample photo</span>' : ''}</a>
     <button class="fav" data-fav="${l.id}" aria-pressed="${fav}" aria-label="${fav ? 'Remove from' : 'Add to'} favourites">${icon('heart', 20)}</button>
     <div class="card-body">
       <p class="price">${kes(l.rent)}<small> / month</small></p>
@@ -227,7 +222,7 @@ function renderChrome() {
       <p>Find a place to call home.</p></div>
     <nav class="foot-links" aria-label="Footer"><a href="/browse.html">Browse</a><a href="/submit-property.html">List a property</a><a href="/about.html">About</a><a href="/contact.html">Contact</a></nav>
     <p class="foot-small">CampusNest is an independent student accommodation platform, starting with Daystar University, Athi River. It is not run by the university.<br>
-      <a href="/credits.html">Photo credits</a> · <a href="/admin/login.html">Admin</a> · <a href="#" id="reset-demo">Clear saved data</a></p></div>`;
+      <a href="/image-sources.html">Photo sources</a> · <a href="/admin/login.html">Admin</a> · <a href="#" id="reset-demo">Clear saved data</a></p></div>`;
 
   $('#logout')?.addEventListener('click', logout);
   $('#reset-demo')?.addEventListener('click', e => { e.preventDefault(); clearSavedData(); });

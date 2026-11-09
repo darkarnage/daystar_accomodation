@@ -81,7 +81,7 @@ function show(l, contactResult) {
         ${photos.map((p, i) => `<a href="${p.full}" data-i="${i}" aria-label="Open photo ${i + 1} of ${photos.length}"><img src="${i ? p.small : p.full}" alt="${esc(p.alt)}" width="${i ? 640 : 1280}" height="${i ? 480 : 960}" ${i ? 'loading="lazy"' : ''}></a>`).join('')}
         ${photos.length > 1 ? `<button class="btn btn-sm gallery-all" type="button" data-i="0">${icon('camera', 16)}View all ${photos.length} photos</button>` : ''}
       </div>
-      ${photos.some(p => p.sample) ? '<p class="gallery-note">Sample photographs for demonstration. They do not show the actual property.</p>' : ''}`
+      ${photos.some(p => p.sample) ? '<p class="gallery-note">Illustrative sample photos, not pictures of this property. <a href="/image-sources.html">Photo sources</a></p>' : ''}`
     : `<div class="gallery" data-n="1"><div class="ph">${LOGO_MARK}<span>The owner has not added photos yet</span></div></div>`;
 
   const facts = [
@@ -142,7 +142,7 @@ function show(l, contactResult) {
       at = (n + photos.length) % photos.length;
       img.src = photos[at].full; img.alt = photos[at].alt;
       $('#lb-count').textContent = `Photo ${at + 1} of ${photos.length}`;
-      $('#lb-cap').textContent = photos[at].sample ? 'Sample photograph for demonstration. It does not show the actual property.' : '';
+      $('#lb-cap').textContent = photos[at].sample ? 'Illustrative sample photo. It does not show this property.' : '';
     };
     $('#gallery').addEventListener('click', e => {
       const t = e.target.closest('[data-i]');

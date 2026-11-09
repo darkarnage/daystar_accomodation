@@ -287,13 +287,13 @@ test('deleting a listing only removes its own uploads, never shared sample photo
   const a = await asAdmin();
   const id = await submit({ title: `TEST-${run} sample` }, [{ data: PNG, name: 'a.png' }]);
   const [upload] = await imagePaths(id);
-  fs.writeFileSync(path.join(UPLOADS, 'student-room.jpg'), 'decoy');   // same file name as a sample photo, in the uploads folder
-  await pool.query("INSERT INTO listing_images (listing_id, file_path, is_primary) VALUES (?, 'assets/images/student-room.jpg', 0)", [id]);
-  const sample = path.join(__dirname, '..', 'public', 'assets', 'images', 'student-room.jpg');
+  fs.writeFileSync(path.join(UPLOADS, 'room-bed-desk-window.jpg'), 'decoy');   // same file name as a sample photo, in the uploads folder
+  await pool.query("INSERT INTO listing_images (listing_id, file_path, is_primary) VALUES (?, 'assets/images/room-bed-desk-window.jpg', 0)", [id]);
+  const sample = path.join(__dirname, '..', 'public', 'assets', 'images', 'room-bed-desk-window.jpg');
   assert.ok(fs.existsSync(sample));
   assert.strictEqual((await a.del('/api/admin/listings/' + id)).status, 200);
   assert.ok(!files().includes(path.basename(upload)), 'the real upload is deleted');
-  assert.ok(files().includes('student-room.jpg'), 'a file that only shares a name is left alone');
+  assert.ok(files().includes('room-bed-desk-window.jpg'), 'a file that only shares a name is left alone');
   assert.ok(fs.existsSync(sample), 'the shared sample photo is untouched');
 });
 

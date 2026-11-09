@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" href="/assets/icons/favicon.svg" type="image/svg+xml">
+  <title>Photo sources · CampusNest</title>
+  <link rel="stylesheet" href="/assets/css/main.css">
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header id="site-header"></header>
+<main id="main" class="narrow">
+  <div class="page-intro">
+    <h1>Photo sources</h1>
+    <p class="lead">The photographs on CampusNest's demo listings and pages are illustrative stock photos. They are <strong>not</strong> pictures of the listed properties. Photos that property owners upload for their own listings are not listed here.</p>
+    <p class="muted">All photos come from <a href="https://www.pexels.com" rel="noopener">Pexels</a> and are used under the <a id="license-link" rel="noopener"></a>, which allows free use. Each entry names the photographer and links to the original page.</p>
+  </div>
+  <ul class="credit-list" id="credits"></ul>
+</main>
+<footer id="site-footer"></footer>
+<script src="/assets/js/main.js"></script>
+<script>
+  // Built from the IMAGES list in main.js, so this page always matches the photos in use.
+  $('#license-link').href = PHOTO_LICENSE.url; $('#license-link').textContent = PHOTO_LICENSE.name;
+  $('#credits').innerHTML = Object.entries(IMAGES).map(([key, i]) => `<li>
+    <img src="${imgUrl(key, true)}" alt="${esc(i.alt)}" loading="lazy" width="96" height="72">
+    <p><b>${esc(i.title)}</b><br>Photo by ${esc(i.by)} on Pexels · <a href="${esc(i.page)}" rel="noopener">Original page</a><br><span class="muted small">File: assets/images/${esc(key)}.jpg</span></p></li>`).join('');
+</script>
+</body>
+</html>

@@ -1,5 +1,6 @@
-// The 13 demo listings (same data as DEMO_ROWS in public/assets/js/main.js, which the localStorage pages still use).
-// db/seed.js inserts these. ids 1-13 line up with the frontend ids, so favourites keep working.
+// The 13 demo listings. db/seed.js inserts these (ids 1-13, so saved favourites keep working).
+// Their photos are illustrative stock photos from Pexels in public/assets/images (sources: /image-sources.html),
+// not pictures of real properties.
 // Statuses are deliberate: 9 approved and available, 1 approved but taken, 2 pending, 1 rejected.
 module.exports = [
   {
@@ -21,11 +22,11 @@ module.exports = [
       "Own bathroom"
     ],
     "images": [
-      "assets/images/bedroom-dark-wall.jpg",
-      "assets/images/study-laptop.jpg",
-      "assets/images/dining-kitchenette.jpg",
-      "assets/images/bedroom-teal.jpg",
-      "assets/images/exterior-brick.jpg"
+      "assets/images/studio-brick-window.jpg",
+      "assets/images/bedroom-neutral-door.jpg",
+      "assets/images/studio-brick-kitchen.jpg",
+      "assets/images/desk-laptop-notebook.jpg",
+      "assets/images/exterior-balcony-block.jpg"
     ],
     "contact": {
       "name": "Mama Njeri Properties",
@@ -51,10 +52,10 @@ module.exports = [
       "Near matatu stage"
     ],
     "images": [
-      "assets/images/bedroom-window.jpg",
-      "assets/images/desk-shelf.jpg",
-      "assets/images/kitchen-wood.jpg",
-      "assets/images/exterior-block.jpg"
+      "assets/images/single-bed-desk-white.jpg",
+      "assets/images/kitchen-small-rug.jpg",
+      "assets/images/bed-desk-wall-unit.jpg",
+      "assets/images/exterior-balcony-block.jpg"
     ],
     "contact": {
       "name": "Mr. Kamau Ochieng",
@@ -86,11 +87,11 @@ module.exports = [
       "Backup power"
     ],
     "images": [
-      "assets/images/living-blue-sofa.jpg",
-      "assets/images/bedroom-lamps.jpg",
-      "assets/images/kitchen-dining-modern.jpg",
-      "assets/images/living-leather-sofa.jpg",
-      "assets/images/bedroom-mountain.jpg"
+      "assets/images/living-light-sofa.jpg",
+      "assets/images/bedroom-desk-tv.jpg",
+      "assets/images/kitchen-open-plan.jpg",
+      "assets/images/living-grey-sofa.jpg",
+      "assets/images/bedroom-grey-window.jpg"
     ],
     "contact": {
       "name": "Savannah Court Ltd",
@@ -118,11 +119,11 @@ module.exports = [
       "Kitchen"
     ],
     "images": [
-      "assets/images/hostel-bunks-bright.jpg",
-      "assets/images/bunk-room.jpg",
-      "assets/images/kitchen-shared.jpg",
-      "assets/images/desk-shelf.jpg",
-      "assets/images/exterior-apartments.jpg"
+      "assets/images/hostel-bunk-beds.jpg",
+      "assets/images/living-dark-sofa.jpg",
+      "assets/images/kitchen-green.jpg",
+      "assets/images/desk-laptop-notebook.jpg",
+      "assets/images/exterior-balcony-block.jpg"
     ],
     "contact": {
       "name": "Mrs. Achieng Otieno",
@@ -148,10 +149,10 @@ module.exports = [
       "Near matatu stage"
     ],
     "images": [
-      "assets/images/bunk-desk.jpg",
-      "assets/images/bunk-plain.jpg",
-      "assets/images/study-laptop.jpg",
-      "assets/images/kitchen-steel.jpg"
+      "assets/images/bed-desk-wall-unit.jpg",
+      "assets/images/bedroom-grey-window.jpg",
+      "assets/images/kitchen-small-rug.jpg",
+      "assets/images/desk-laptop-notebook.jpg"
     ],
     "contact": {
       "name": "Mama Njeri Properties",
@@ -180,10 +181,10 @@ module.exports = [
       "Own bathroom"
     ],
     "images": [
-      "assets/images/bedroom-teal.jpg",
-      "assets/images/bedroom-window.jpg",
-      "assets/images/studio-living.jpg",
-      "assets/images/exterior-block.jpg"
+      "assets/images/bedroom-grey-window.jpg",
+      "assets/images/bedroom-neutral-door.jpg",
+      "assets/images/studio-white-bright.jpg",
+      "assets/images/exterior-balcony-block.jpg"
     ],
     "contact": {
       "name": "Mr. Kamau Ochieng",
@@ -213,10 +214,10 @@ module.exports = [
       "Backup power"
     ],
     "images": [
-      "assets/images/bedroom-mountain.jpg",
-      "assets/images/studio-living.jpg",
-      "assets/images/kitchen-dining-modern.jpg",
-      "assets/images/exterior-modern.jpg"
+      "assets/images/studio-open-plan-sofa.jpg",
+      "assets/images/studio-counter-view.jpg",
+      "assets/images/living-orange-sofa.jpg",
+      "assets/images/studio-kitchen-bed.jpg"
     ],
     "contact": {
       "name": "Savannah Court Ltd",
@@ -242,10 +243,10 @@ module.exports = [
       "Backup power"
     ],
     "images": [
-      "assets/images/bedroom-attic.jpg",
-      "assets/images/study-laptop.jpg",
-      "assets/images/kitchen-wood.jpg",
-      "assets/images/exterior-apartments.jpg"
+      "assets/images/room-bed-desk-window.jpg",
+      "assets/images/kitchen-green.jpg",
+      "assets/images/desk-laptop-notebook.jpg",
+      "assets/images/exterior-balcony-block.jpg"
     ],
     "contact": {
       "name": "Mrs. Achieng Otieno",
@@ -274,10 +275,10 @@ module.exports = [
       "Near matatu stage"
     ],
     "images": [
-      "assets/images/desk-shelf.jpg",
-      "assets/images/bedroom-dark-wall.jpg",
-      "assets/images/dining-kitchenette.jpg",
-      "assets/images/exterior-block.jpg"
+      "assets/images/loft-studio-desk.jpg",
+      "assets/images/studio-brick-kitchen.jpg",
+      "assets/images/desk-laptop-notebook.jpg",
+      "assets/images/kitchen-open-plan.jpg"
     ],
     "contact": {
       "name": "Mama Njeri Properties",
@@ -303,11 +304,11 @@ module.exports = [
       "Kitchen"
     ],
     "images": [
-      "assets/images/hostel-tv.jpg",
-      "assets/images/bunk-room.jpg",
-      "assets/images/living-white-sofa.jpg",
-      "assets/images/kitchen-steel.jpg",
-      "assets/images/exterior-apartments.jpg"
+      "assets/images/living-dark-sofa.jpg",
+      "assets/images/bedroom-neutral-door.jpg",
+      "assets/images/kitchen-small-rug.jpg",
+      "assets/images/bedroom-desk-tv.jpg",
+      "assets/images/exterior-balcony-block.jpg"
     ],
     "contact": {
       "name": "Mr. Kamau Ochieng",
@@ -334,9 +335,9 @@ module.exports = [
       "Own bathroom"
     ],
     "images": [
-      "assets/images/bedroom-lamps.jpg",
-      "assets/images/studio-kitchenette.jpg",
-      "assets/images/exterior-modern.jpg"
+      "assets/images/studio-kitchen-bed.jpg",
+      "assets/images/studio-counter-view.jpg",
+      "assets/images/exterior-balcony-block.jpg"
     ],
     "contact": {
       "name": "Savannah Court Ltd",
@@ -361,8 +362,8 @@ module.exports = [
       "Fenced compound"
     ],
     "images": [
-      "assets/images/bunk-plain.jpg",
-      "assets/images/kitchen-wood.jpg"
+      "assets/images/bedroom-neutral-door.jpg",
+      "assets/images/kitchen-small-rug.jpg"
     ],
     "contact": {
       "name": "Mrs. Achieng Otieno",
@@ -390,9 +391,9 @@ module.exports = [
       "Furnished"
     ],
     "images": [
-      "assets/images/living-leather-sofa.jpg",
-      "assets/images/living-bright.jpg",
-      "assets/images/kitchen-dining-modern.jpg"
+      "assets/images/living-orange-sofa.jpg",
+      "assets/images/living-grey-sofa.jpg",
+      "assets/images/kitchen-open-plan.jpg"
     ],
     "contact": {
       "name": "Mr. Kamau Ochieng",
