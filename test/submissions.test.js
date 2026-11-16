@@ -187,7 +187,7 @@ test('if the database step fails, the photos already saved are deleted again', a
     assert.strictEqual(await listingCount(), listings, 'no listing row');
     assert.strictEqual(files().length, before, 'saved photos were removed');
   } finally {
-    await pool.query('ALTER TABLE listings DROP CHECK chk_test_force_fail');
+    await pool.query('ALTER TABLE listings DROP CONSTRAINT chk_test_force_fail');
   }
 });
 

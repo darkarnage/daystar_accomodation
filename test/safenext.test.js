@@ -9,7 +9,7 @@ const vm = require('vm');
 
 const ORIGIN = 'http://localhost:3000';
 const source = fs.readFileSync(path.join(__dirname, '..', 'public', 'assets', 'js', 'main.js'), 'utf8');
-const match = source.match(/function safeNext\(raw\) \{[\s\S]*?\n\}\n/);
+const match = source.match(/function safeNext\(raw\) \{[\s\S]*?\r?\n\}\r?\n/);
 assert.ok(match, 'safeNext was not found in main.js');
 const sandbox = { location: { origin: ORIGIN }, URL };
 vm.createContext(sandbox);
