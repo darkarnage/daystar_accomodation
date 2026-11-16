@@ -30,6 +30,7 @@ app.use('/api', attachUser);
 app.use('/api/auth', require('./routes/auth.routes'));
 app.use('/api/listings', require('./routes/listings.routes'));
 app.use('/api/submissions', require('./routes/submissions.routes'));
+app.use('/api/favourites', require('./routes/favourites.routes'));
 app.use('/api/admin', require('./routes/admin.routes'));
 app.use('/api/ai-search', require('./routes/aisearch.routes'));
 
