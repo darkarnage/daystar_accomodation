@@ -125,12 +125,13 @@ function show(l, contactResult) {
   // Save button (students only).
   const favBtn = $('#favbtn');
   const favLabel = () => {
-    const saved = getFavs().includes(l.id);
+    const saved = favIds.has(l.id);
     favBtn.setAttribute('aria-pressed', saved);
     favBtn.innerHTML = `${icon('heart', 18)}${saved ? 'Saved to favourites' : 'Save to favourites'}`;
   };
   favLabel();
-  document.addEventListener('favchange', favLabel);
+  document.addEventListener('favchange', favLabel);   // the student saved or removed it
+  document.addEventListener('favload', favLabel);     // the favourites finished loading from the server
   if (user && user.role !== 'student') favBtn.hidden = true;   // only students have favourites
 
   // Photo viewer.

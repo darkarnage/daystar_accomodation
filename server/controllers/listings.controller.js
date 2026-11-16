@@ -128,6 +128,7 @@ exports.contact = async (req, res) => {
   }
 };
 
-// Shared with the admin controller.
+// Shared with the admin and favourites controllers.
 exports.COLUMNS = COLUMNS;
+exports.PUBLIC_ONLY = PUBLIC_ONLY;
 exports.toJson = toJson;
