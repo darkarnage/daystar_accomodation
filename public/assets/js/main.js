@@ -1,6 +1,6 @@
 // Shared frontend code: constants, small helpers, login state, favourites, navbar/footer, card renderer.
-// Listings, accounts and moderation live in the database (see /api). Only favourites and a saved copy of the
-// logged-in user are kept in this browser's localStorage.
+// Listings, accounts, favourites and moderation live in the database (see /api). The only thing kept in this browser's
+// localStorage is a saved copy of the logged-in user's name, so the header can draw without waiting for the server.
 
 const ROOM_TYPES = { single: 'Single room', bedsit: 'Bedsit', one_bedroom: 'One bedroom', shared: 'Shared room', hostel: 'Hostel' };
 const AMENITIES = ['Wi-Fi', 'Water 24/7', 'Security guard', 'Fenced compound', 'Parking', 'Furnished', 'Own bathroom', 'Kitchen', 'Backup power', 'Near matatu stage'];
@@ -15,13 +15,20 @@ const write = (k, v) => localStorage.setItem(k, JSON.stringify(v));
 // The logged-in user. cn_user is only a saved copy of what the server says (see syncSession below):
 // the server session cookie is what really counts.
 const getUser = () => { const u = read('cn_user', null); return u && ['student', 'admin'].includes(u.role) ? u : null; };
-const getFavs = () => read('cn_favs', []);
+
+// Favourites belong to ONE student and live in the database (GET / PUT / DELETE /api/favourites, scoped to the logged-in
+// student by the server). Here we only keep a copy in memory, to draw the hearts. Nothing about favourites is stored in the
+// browser, so another account (or a logged-out visitor) can never see someone else's favourites.
+let favIds = new Set();   // ids of the logged-in student's favourite listings
+let csrfToken = '';       // proves a change comes from our own page (sent in the X-CSRF-Token header)
+
 // Logging out ends the server session (students) and clears the saved copy of the user.
 async function endSession() { try { await fetch('/api/auth/logout', { method: 'POST' }); } catch { /* server offline: still log out here */ } }
-async function logout() { await endSession(); localStorage.removeItem('cn_user'); location.href = '/'; }
-async function clearSavedData() { await endSession(); ['cn_user', 'cn_favs'].forEach(k => localStorage.removeItem(k)); location.href = '/'; }
-// Older versions of the demo kept listings and accounts in this browser. They are not used any more.
-['cn_listings', 'cn_users'].forEach(k => localStorage.removeItem(k));
+async function logout() { await endSession(); favIds = new Set(); localStorage.removeItem('cn_user'); location.href = '/'; }
+async function clearSavedData() { await endSession(); favIds = new Set(); localStorage.removeItem('cn_user'); location.href = '/'; }
+// Older versions kept listings, accounts and favourites in this browser. They are not used any more. cn_favs was ONE list
+// shared by everyone who used this browser (the cause of the "I can see another student's favourites" bug), so it is cleared.
+['cn_listings', 'cn_users', 'cn_favs'].forEach(k => localStorage.removeItem(k));
 
 // Public pages only ever show approved listings that are still available.
 const isPublic = l => l.status === 'approved' && l.availability === 'available';
@@ -160,7 +167,7 @@ async function apiGet(path) {
 // ---------- cards ----------
 // variant: '' (normal), 'card-feature' (big, homepage) or 'card-row' (small horizontal, homepage).
 function cardHTML(l, variant = '') {
-  const fav = getFavs().includes(l.id);
+  const fav = favIds.has(l.id);
   const ams = l.amenities.slice(0, 2).map(a =>
     `<span class="am">${icon(AMENITY_ICON[a] || 'check', 16)}${esc(a)}</span>`).join('');
   return `<article class="card ${variant}">
@@ -249,24 +256,47 @@ function toast(msg) {
   clearTimeout(toast.t); toast.t = setTimeout(() => t.classList.remove('show'), 2600);
 }
 
-// Favourite hearts (students only). Works for any element with data-fav.
-document.addEventListener('click', e => {
+// Draw every heart (the ones on cards and the save button on the property page) from the in-memory favourites.
+function markHearts() {
+  $$('[data-fav]').forEach(b => {
+    const saved = favIds.has(Number(b.dataset.fav));
+    b.setAttribute('aria-pressed', saved);
+    if (b.classList.contains('fav')) b.setAttribute('aria-label', saved ? 'Remove from favourites' : 'Add to favourites');
+  });
+}
+
+// Favourite hearts (students only). Works for any element with data-fav. The server saves or removes the favourite for
+// the logged-in student, and only then do we change the heart.
+document.addEventListener('click', async e => {
   const btn = e.target.closest('[data-fav]');
-  if (!btn) return;
-  const u = getUser();
-  if (u?.role !== 'student') {
+  if (!btn || btn.disabled) return;
+  await sessionReady;   // wait until we know who is logged in and what they saved
+  if (getUser()?.role !== 'student') {
     location.href = '/login.html?next=' + encodeURIComponent(location.pathname + location.search) + '&msg=fav';
     return;
   }
   const id = Number(btn.dataset.fav);
-  let favs = getFavs();
-  favs = favs.includes(id) ? favs.filter(f => f !== id) : [...favs, id];
-  write('cn_favs', favs);
-  $$(`[data-fav="${id}"]`).forEach(b => {
-    b.setAttribute('aria-pressed', favs.includes(id));
-    b.setAttribute('aria-label', favs.includes(id) ? 'Remove from favourites' : 'Add to favourites');
-  });
-  toast(favs.includes(id) ? 'Saved to favourites' : 'Removed from favourites');
+  const wasSaved = favIds.has(id);
+  const buttons = $$(`[data-fav="${id}"]`);
+  buttons.forEach(b => { b.disabled = true; });   // ignore double clicks while the server answers
+  let res = null;
+  try {
+    res = await fetch(`/api/favourites/${id}`, { method: wasSaved ? 'DELETE' : 'PUT', headers: { 'X-CSRF-Token': csrfToken } });
+  } catch { /* network problem: res stays null */ }
+  buttons.forEach(b => { b.disabled = false; });
+
+  if (!res) return toast('Cannot reach the server. Please try again.');
+  if (res.status === 401) {   // the login ended: forget it and ask them to log in again
+    localStorage.removeItem('cn_user');
+    location.href = '/login.html?next=' + encodeURIComponent(location.pathname + location.search) + '&msg=fav';
+    return;
+  }
+  if (res.status === 403) { await syncSession(); return toast('Please try again.'); }   // stale security token: refreshed
+  if (res.status === 404) { favIds.delete(id); toast('This listing is no longer available.'); }
+  else if (!res.ok) return toast('Could not save. Please try again.');
+  else if (wasSaved) { favIds.delete(id); toast('Removed from favourites'); }
+  else { favIds.add(id); toast('Saved to favourites'); }
+  markHearts();
   document.dispatchEvent(new CustomEvent('favchange'));
 });
 
@@ -283,20 +313,39 @@ function requireRole(...roles) {
   return u;
 }
 
+// Load this student's favourites from the server (and nobody else's). Logged-out visitors and admins have none.
+async function loadFavs(user) {
+  favIds = new Set();
+  if (user?.role === 'student') {
+    try {
+      const res = await fetch('/api/favourites', { cache: 'no-store' });
+      if (res.ok) favIds = new Set((await res.json()).ids);
+    } catch { /* server offline: no hearts */ }
+  }
+  markHearts();
+  document.dispatchEvent(new CustomEvent('favload'));
+}
+
 // The page first shows the saved user (no flicker), then asks the server who is really logged in.
-// If they differ, update the saved copy and redraw the header.
+// The server's answer decides everything: the saved user, the security token and whose favourites to show.
 async function syncSession() {
   try {
-    const res = await fetch('/api/auth/me');
+    const res = await fetch('/api/auth/me', { cache: 'no-store' });
     if (!res.ok) return;
-    const server = (await res.json()).user;
-    const saved = getUser();
-    if (JSON.stringify(server) === JSON.stringify(saved)) return;
-    if (server) write('cn_user', server); else localStorage.removeItem('cn_user');
-    renderChrome();
-    document.dispatchEvent(new Event('sessionchange'));
+    const data = await res.json();
+    const changed = JSON.stringify(data.user) !== JSON.stringify(getUser());
+    csrfToken = data.csrfToken || '';
+    if (changed) { if (data.user) write('cn_user', data.user); else localStorage.removeItem('cn_user'); }
+    await loadFavs(data.user);
+    if (changed) { renderChrome(); document.dispatchEvent(new Event('sessionchange')); }
   } catch { /* server offline: keep showing the saved user */ }
 }
 
 renderChrome();
-syncSession();
+const sessionReady = syncSession();
+
+// Never show a previous account's hearts after the login changed:
+// - coming back to this tab (someone may have logged in as another student in another tab): ask the server again
+// - the Back button restoring an old copy of a page from the browser's memory: load the page fresh
+document.addEventListener('visibilitychange', () => { if (!document.hidden) syncSession(); });
+window.addEventListener('pageshow', e => { if (e.persisted) location.reload(); });
