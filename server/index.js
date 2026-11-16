@@ -32,6 +32,7 @@ app.use('/api/listings', require('./routes/listings.routes'));
 app.use('/api/submissions', require('./routes/submissions.routes'));
 app.use('/api/favourites', require('./routes/favourites.routes'));
 app.use('/api/admin', require('./routes/admin.routes'));
+app.use('/api/ai-search', require('./routes/aisearch.routes'));
 
 // Broken JSON in a request body gets a clean 400 instead of an HTML error page.
 app.use((err, req, res, next) => {

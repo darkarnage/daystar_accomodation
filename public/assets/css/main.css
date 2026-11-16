@@ -460,3 +460,16 @@ input[type=checkbox], input[type=radio] { accent-color: var(--forest); width: 1.
 .card-skel { min-height: 320px; background: linear-gradient(90deg, var(--stone) 25%, #EEEAE0 50%, var(--stone) 75%); background-size: 300% 100%; animation: shimmer 1.4s linear infinite; border-color: var(--stone); }
 .feature-side .card-skel { min-height: 150px; }
 @keyframes shimmer { to { background-position: -300% 0; } }
+
+/* ---------- AI-assisted search box (browse page) ---------- */
+.ai-box { background: var(--white); border: 1px solid var(--stone); border-radius: var(--r); padding: var(--s4); margin-bottom: var(--s4); }
+.ai-box label { display: flex; align-items: center; gap: .5rem; font: 600 1rem var(--font-head); margin-bottom: var(--s2); }
+.ai-box label .icon { color: var(--forest); }
+.ai-tag { background: var(--stone); color: var(--charcoal); border-radius: var(--r-sm); padding: .05rem .5rem; font: 500 .75rem/1.5 var(--font-head); }
+.ai-row { display: grid; grid-template-columns: 1fr auto; gap: var(--s3); }
+.ai-hint { color: var(--muted); font-size: .8125rem; margin: var(--s2) 0 0; }
+.ai-note { margin-top: var(--s2); font-size: .9375rem; }
+.ai-note { scroll-margin-top: calc(var(--header-h) + var(--s3)); }
+.ai-note:empty { display: none; }
+.ai-chip { display: inline-block; background: var(--forest-tint); color: var(--forest); border-radius: var(--r-sm); padding: .1rem .55rem; font: 500 .875rem var(--font-head); margin: .1rem 0; }
+@media (max-width: 520px) { .ai-row { grid-template-columns: 1fr; } .ai-row .btn { width: 100%; } }
