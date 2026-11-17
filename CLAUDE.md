@@ -4,7 +4,7 @@ University group project. Student accommodation finder for Daystar University, A
 Deadline: 24 November 2026. Keep everything simple and beginner-friendly.
 
 ## Stack
-HTML/CSS/vanilla JS frontend (`public/`), Node.js + Express backend (`server/`), MySQL 8 in Docker (`db/`).
+HTML/CSS/vanilla JS frontend (`public/`), Node.js + Express backend (`server/`), MariaDB from XAMPP (`db/`, `127.0.0.1:3306`). XAMPP MariaDB is the only supported local database setup (no Docker): see `README.md`.
 No frontend framework, no ORM, no TypeScript. Do not add dependencies without a clear need.
 
 ## Roles
@@ -24,10 +24,11 @@ Student (browse, favourites, sees owner contact), Admin (approves, rejects and d
 - SQL: always `?` placeholders, never string-built queries.
 - Deleting a listing (admin): DB rows cascade, but image files do not. Read `file_path` from `listing_images` first, delete rows, then `fs.unlink` each file.
 - Never commit `.env`. Never store the admin password in plain text (`db/seed.js` hashes it).
-- MySQL is bound to `127.0.0.1:3308` only.
+- The app connects to MariaDB at `127.0.0.1:3306` as its own limited user (`daystar_app`, rights on the `daystar_accommodation` database only), never as `root`. MariaDB should accept connections from this computer only. Database setup is manual (create database and user, import `db/schema.sql`): `db/schema.sql` never drops or empties anything.
+- SQL must work on MariaDB 10.4 or newer, which is what XAMPP ships (MariaDB-compatible syntax only, for example `DROP CONSTRAINT`, not MySQL's `DROP CHECK`).
 
 ## Commands
-`npm run db:up` / `db:down` / `db:reset`, `npm run seed`, `npm run dev` (http://localhost:3000), `npm test` (API checks; needs the server and database running).
+`npm install`, `npm run seed`, `npm run dev` (http://localhost:3000) or `npm start`, `npm run seed:test`, `npm test` (API checks). Tests only run against a separate test database (`TEST_DB_*` in `.env`, name ends in `_test`, never `DB_NAME`); they start their own servers and delete only records carrying their own run id (`test-support/testdb.js`). There are no other database scripts: start and stop MariaDB in the XAMPP Control Panel.
 
 ## Layout
 See `SCAFFOLD.md`. Designs from Google Stitch go in `design/` and are the reference for the frontend.

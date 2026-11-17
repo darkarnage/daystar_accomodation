@@ -1,18 +1,14 @@
 // Favourites checks: every student only ever sees and changes THEIR OWN favourites.
-// Needs the database running with the demo listings (npm run db:up, npm run seed). Starts its own server on port 3955.
-// Test accounts use @example.test emails and are deleted at the end (their favourites go with them).
-// The demo Faith account is never used or changed by these tests.
+// Needs the TEST database set up and seeded (README.md, "Testing"). Test accounts have @example.test emails containing this run's unique
+// id; only those are deleted at the end (their favourites go with them). The demo Faith account is never changed.
 const test = require('node:test');
 const assert = require('node:assert');
 const crypto = require('crypto');
-const path = require('path');
-const { spawn } = require('child_process');
-const pool = require('../server/db');
+const { pool, RUN: run, verifyTestDatabase, trackSession, startServer, cleanup } = require('../test-support/testdb');
 
 const PORT = 3955;
 const BASE = `http://localhost:${PORT}`;
-const run = Date.now();
-let child, n = 0;
+let n = 0;
 const PASSWORD = 'password123';
 const sha = (t) => crypto.createHash('sha256').update(t).digest('hex');
 
@@ -56,20 +52,8 @@ async function logIn(email) {   // a fresh browser logging in again (new session
 }
 const rows = async (userId) => (await pool.query('SELECT listing_id FROM favourites WHERE user_id = ? ORDER BY listing_id', [userId]))[0].map((r) => r.listing_id);
 
-test.before(async () => {
-  child = spawn(process.execPath, ['server/index.js'], { cwd: path.join(__dirname, '..'), env: { ...process.env, PORT: String(PORT) }, stdio: 'ignore' });
-  for (let i = 0; i < 50; i++) {
-    try { if ((await fetch(BASE + '/api/listings?limit=1')).ok) return; } catch { /* not up yet */ }
-    await new Promise((r) => setTimeout(r, 200));
-  }
-  throw new Error('test server did not start');
-});
-test.after(async () => {
-  child.kill();
-  await pool.query("DELETE FROM listings WHERE title LIKE 'TEST-fav-%'");
-  await pool.query("DELETE FROM users WHERE email LIKE '%@example.test'");   // their sessions and favourites go with them
-  await pool.end();
-});
+test.before(async () => { await verifyTestDatabase(); await startServer(PORT); });
+test.after(cleanup);
 
 test('favourites are for logged-in students only', async () => {
   const anon = browser();
@@ -77,6 +61,7 @@ test('favourites are for logged-in students only', async () => {
   // an admin session is not a student
   const [[admin]] = await pool.query("SELECT id FROM users WHERE role = 'admin' LIMIT 1");
   const token = crypto.randomBytes(32).toString('hex'), csrf = crypto.randomBytes(32).toString('hex');
+  trackSession(token);
   await pool.query('INSERT INTO sessions (token_hash, csrf_token, user_id, expires_at) VALUES (?, ?, ?, DATE_ADD(NOW(), INTERVAL 1 HOUR))', [sha(token), csrf, admin.id]);
   const a = browser(); a.cookie = 'cn_session=' + token; a.csrf = csrf;
   for (const [m, p] of [['GET', '/api/favourites'], ['PUT', '/api/favourites/1'], ['DELETE', '/api/favourites/1']]) assert.strictEqual((await a.call(m, p, undefined, { 'X-CSRF-Token': csrf })).status, 403, 'admin ' + m);
@@ -184,7 +169,7 @@ test('a favourite disappears while its listing is hidden and comes back when it 
   const A = await newStudent('a');
   const [r] = await pool.query(
     `INSERT INTO listings (title, description, room_type, rent_kes, location, distance_km, availability, status, contact_name, contact_phone, contact_email)
-     VALUES (?, 'A test listing used by the favourites tests.', 'bedsit', 5000, 'Test', 1.0, 'available', 'approved', 'T', '0700 000 000', 't@example.test')`, [`TEST-fav-${run}`]);
+     VALUES (?, 'A test listing used by the favourites tests.', 'bedsit', 5000, 'Test', 1.0, 'available', 'approved', 'T', '0700 000 000', 't@example.test')`, [`TEST-${run} fav`]);
   const id = r.insertId;
   assert.strictEqual((await A.put('/api/favourites/' + id)).status, 200);
   assert.ok((await A.ids()).includes(id));

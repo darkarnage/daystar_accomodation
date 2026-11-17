@@ -1,9 +1,12 @@
-// API checks for the public listings endpoints. Needs the server and database running (npm run dev, npm run db:up, npm run seed).
-// Run with: npm test
+// API checks for the public listings endpoints (read-only). Needs the TEST database set up and seeded (README.md, "Testing").
+// Starts its own server on port 3956, connected to the test database only.
 const test = require('node:test');
 const assert = require('node:assert');
+const { verifyTestDatabase, startServer, cleanup } = require('../test-support/testdb');
 
-const BASE = process.env.TEST_URL || 'http://localhost:3000';
+const BASE = 'http://localhost:3956';
+test.before(async () => { await verifyTestDatabase(); await startServer(3956); });
+test.after(cleanup);
 const get = async (path) => {
   const res = await fetch(BASE + path);
   const text = await res.text();

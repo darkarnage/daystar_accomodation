@@ -7,10 +7,8 @@
   "scripts": {
     "start": "node server/index.js",
     "dev": "node --watch server/index.js",
-    "db:up": "docker compose up -d --wait",
-    "db:down": "docker compose down",
-    "db:reset": "docker compose down -v && docker compose up -d --wait && npm run seed",
     "seed": "node db/seed.js",
+    "seed:test": "node test-support/seed.js",
     "test": "node --test --test-concurrency=1"
   },
   "dependencies": {

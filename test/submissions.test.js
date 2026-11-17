@@ -1,40 +1,19 @@
-// Submission and image-upload checks. Needs the database running (npm run db:up, npm run seed).
-// This test starts its own server on spare ports with a temporary uploads folder, so your real uploads/ is untouched.
-// Test listings have titles starting "TEST-" and are deleted at the end.
+// Submission and image-upload checks. Needs the TEST database set up and seeded (README.md, "Testing").
+// This test starts its own servers on spare ports with a temporary uploads folder, so your real uploads/ is untouched.
+// Test listings are titled "TEST-<run id> ..." and only those are deleted at the end.
 const test = require('node:test');
 const assert = require('node:assert');
 const fs = require('fs');
-const os = require('os');
 const path = require('path');
-const { spawn } = require('child_process');
-const pool = require('../server/db');
+const { pool, RUN: run, UPLOADS, verifyTestDatabase, startServer, cleanup } = require('../test-support/testdb');
 
-const UPLOADS = fs.mkdtempSync(path.join(os.tmpdir(), 'campusnest-uploads-'));
 const MAIN = { port: 3951, limit: 1000 };
 const LIMITED = { port: 3952, limit: 2 };
 const url = (s, p) => `http://localhost:${s.port}${p}`;
-const run = Date.now();
-const children = [];
 
 // Tiny valid images.
 const PNG = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==', 'base64');
 const JPG = Buffer.from('/9j/4AAQSkZJRgABAQEASABIAAD/2wBDAP//////////////////////////////////////////////////////////////////////////////////////wgALCAABAAEBAREA/8QAFBABAAAAAAAAAAAAAAAAAAAAAP/aAAgBAQABPxA=', 'base64');
-
-function startServer(s) {
-  const child = spawn(process.execPath, ['server/index.js'], {
-    cwd: path.join(__dirname, '..'),
-    env: { ...process.env, PORT: String(s.port), UPLOAD_DIR: UPLOADS, SUBMIT_LIMIT_PER_HOUR: String(s.limit) },
-    stdio: 'ignore',
-  });
-  children.push(child);
-  return (async () => {
-    for (let i = 0; i < 50; i++) {
-      try { if ((await fetch(url(s, '/api/listings?limit=1'))).ok) return; } catch { /* not up yet */ }
-      await new Promise((r) => setTimeout(r, 200));
-    }
-    throw new Error('test server did not start');
-  })();
-}
 
 const fields = (over = {}) => ({
   title: `TEST-${run} Bright bedsit`, roomType: 'bedsit', rent: '6500', distance: '1.5', location: 'Mlolongo',
@@ -55,14 +34,11 @@ async function submit(server, f, photos = [], extraField = 'photos', amenities =
 const listingCount = async () => (await pool.query('SELECT COUNT(*) AS n FROM listings'))[0][0].n;
 const files = () => fs.readdirSync(UPLOADS);
 
-test.before(async () => { await Promise.all([startServer(MAIN), startServer(LIMITED)]); });
-test.after(async () => {
-  for (const c of children) c.kill();
-  await pool.query("DELETE FROM listings WHERE title LIKE 'TEST-%'");   // images and amenities go with them (ON DELETE CASCADE)
-  await pool.query('ALTER TABLE listings DROP CHECK chk_test_force_fail').catch(() => {});
-  fs.rmSync(UPLOADS, { recursive: true, force: true });
-  await pool.end();
+test.before(async () => {
+  await verifyTestDatabase();
+  await Promise.all([MAIN, LIMITED].map((s) => startServer(s.port, { SUBMIT_LIMIT_PER_HOUR: String(s.limit) })));
 });
+test.after(cleanup);
 
 test('a valid submission with two photos is saved as pending', async () => {
   const r = await submit(MAIN, fields({ title: `TEST-${run} two photos` }), [
@@ -176,18 +152,23 @@ test('five photos of exactly the allowed type and size are accepted', async () =
   assert.strictEqual((await submit(MAIN, fields({ title: `TEST-${run} 2mb` }), [{ data: exactly2mb, name: 'b.jpg' }])).status, 201);
 });
 
-test('if the database step fails, the photos already saved are deleted again', async () => {
+test('if the database step fails, the photos already saved are deleted again', async (t) => {
   // A temporary CHECK rule makes the INSERT fail for one special title, after the photos were written.
-  await pool.query("ALTER TABLE listings ADD CONSTRAINT chk_test_force_fail CHECK (title <> 'TEST-FORCE-FAIL')");
+  // The rule has a name unique to this run. We only drop it if WE added it, and never touch one that already existed.
+  // (DROP CONSTRAINT works on MariaDB; MySQL's older DROP CHECK is a syntax error there.)
+  const rule = `chk_force_fail_${run}`, title = `TEST-${run} FORCE-FAIL`;
+  const [[{ n }]] = await pool.query("SELECT COUNT(*) AS n FROM information_schema.TABLE_CONSTRAINTS WHERE CONSTRAINT_SCHEMA = DATABASE() AND TABLE_NAME = 'listings' AND CONSTRAINT_NAME = ?", [rule]);
+  if (n > 0) return t.skip('a constraint with this name already exists: left alone');
+  await pool.query(`ALTER TABLE listings ADD CONSTRAINT ${rule} CHECK (title <> '${title}')`);   // name and title are made only from this run's id
   try {
     const listings = await listingCount(), before = files().length;
-    const r = await submit(MAIN, fields({ title: 'TEST-FORCE-FAIL' }), [{ data: PNG }, { data: JPG }]);
+    const r = await submit(MAIN, fields({ title }), [{ data: PNG }, { data: JPG }]);
     assert.strictEqual(r.status, 500);
-    assert.ok(!/TEST-FORCE|constraint|sql/i.test(r.text), 'no database details are leaked');
+    assert.ok(!/FORCE-FAIL|constraint|sql/i.test(r.text), 'no database details are leaked');
     assert.strictEqual(await listingCount(), listings, 'no listing row');
     assert.strictEqual(files().length, before, 'saved photos were removed');
   } finally {
-    await pool.query('ALTER TABLE listings DROP CONSTRAINT chk_test_force_fail');
+    await pool.query(`ALTER TABLE listings DROP CONSTRAINT ${rule}`);
   }
 });
 

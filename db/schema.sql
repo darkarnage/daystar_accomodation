@@ -1,5 +1,12 @@
--- Daystar Student Accommodation Finder: MVP schema (MySQL 8, InnoDB)
--- Runs automatically on first container start (empty volume only).
+-- CampusNest (Daystar Student Accommodation Finder): database schema for MariaDB (XAMPP), InnoDB tables.
+--
+-- Run this ONCE, into the empty `daystar_accommodation` database (phpMyAdmin: select the database, then Import;
+-- or in the mysql client: USE daystar_accommodation; SOURCE db/schema.sql;). See README.md, "Database setup".
+-- It only creates tables: it never drops or empties anything. Running it again on a database that already has the
+-- tables stops with a "table already exists" error and changes nothing.
+--
+-- Every table is utf8mb4 on purpose, so names and descriptions with accents or emoji are stored correctly even if the
+-- database itself was created with another character set.
 
 CREATE TABLE users (
   id            INT UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -11,7 +18,7 @@ CREATE TABLE users (
   created_at    TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (id),
   UNIQUE KEY uq_users_email (email)
-) ENGINE=InnoDB;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE listings (
   id               INT UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -32,7 +39,7 @@ CREATE TABLE listings (
   PRIMARY KEY (id),
   KEY idx_listings_browse (status, availability, rent_kes),
   CONSTRAINT chk_listings_rent CHECK (rent_kes > 0)
-) ENGINE=InnoDB;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE listing_images (
   id         INT UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -43,14 +50,14 @@ CREATE TABLE listing_images (
   KEY idx_images_listing (listing_id),
   CONSTRAINT fk_images_listing FOREIGN KEY (listing_id)
     REFERENCES listings (id) ON DELETE CASCADE
-) ENGINE=InnoDB;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE amenities (
   id   INT UNSIGNED NOT NULL AUTO_INCREMENT,
   name VARCHAR(50) NOT NULL,
   PRIMARY KEY (id),
   UNIQUE KEY uq_amenities_name (name)
-) ENGINE=InnoDB;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE listing_amenities (
   listing_id INT UNSIGNED NOT NULL,
@@ -60,7 +67,7 @@ CREATE TABLE listing_amenities (
     REFERENCES listings (id) ON DELETE CASCADE,
   CONSTRAINT fk_la_amenity FOREIGN KEY (amenity_id)
     REFERENCES amenities (id) ON DELETE CASCADE
-) ENGINE=InnoDB;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE favourites (
   user_id    INT UNSIGNED NOT NULL,
@@ -71,7 +78,7 @@ CREATE TABLE favourites (
     REFERENCES users (id) ON DELETE CASCADE,
   CONSTRAINT fk_fav_listing FOREIGN KEY (listing_id)
     REFERENCES listings (id) ON DELETE CASCADE
-) ENGINE=InnoDB;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Login sessions. The cookie holds a random token; only its SHA-256 hash is stored here,
 -- so a leaked database cannot be used to log in. Logging out deletes the row.
@@ -86,4 +93,4 @@ CREATE TABLE sessions (
   KEY idx_sessions_expires (expires_at),
   CONSTRAINT fk_sessions_user FOREIGN KEY (user_id)
     REFERENCES users (id) ON DELETE CASCADE
-) ENGINE=InnoDB;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

@@ -1,11 +1,9 @@
 // AI search checks. No Gemini key or internet needed: the tests start a fake Gemini server and point our server at it.
-// Needs the database running (npm run db:up, npm run seed). Starts its own servers on ports 3961-3964.
+// Needs the TEST database set up and seeded (README.md, "Testing"). Starts its own servers on ports 3962-3965 (the fake Gemini uses 3961). Changes no data.
 const test = require('node:test');
 const assert = require('node:assert');
 const http = require('http');
-const path = require('path');
-const { spawn } = require('child_process');
-const pool = require('../server/db');
+const { pool, verifyTestDatabase, startServer, cleanup } = require('../test-support/testdb');
 
 const KEY = 'test-key-AbC123-do-not-leak';
 const FAKE_PORT = 3961;
@@ -13,7 +11,6 @@ const WITH_KEY = { port: 3962, limit: 1000 };
 const NO_KEY = { port: 3963, limit: 1000 };
 const LIMITED = { port: 3964, limit: 3 };
 const url = (s, p) => `http://localhost:${s.port}${p}`;
-const children = [];
 let fakeServer;
 let stderr = '';
 
@@ -40,19 +37,10 @@ function startFake() {
   return new Promise((resolve) => fakeServer.listen(FAKE_PORT, resolve));
 }
 
-function startServer(s, withKey) {
-  const env = { ...process.env, PORT: String(s.port), AI_SEARCH_LIMIT_PER_HOUR: String(s.limit), AI_TIMEOUT_MS: '1500',
-    GEMINI_API_KEY: withKey ? KEY : '', GEMINI_API_URL: `http://localhost:${FAKE_PORT}`, GEMINI_MODEL: 'fake-model' };
-  const child = spawn(process.execPath, ['server/index.js'], { cwd: path.join(__dirname, '..'), env, stdio: ['ignore', 'ignore', 'pipe'] });
-  child.stderr.on('data', (d) => { stderr += d; });
-  children.push(child);
-  return (async () => {
-    for (let i = 0; i < 50; i++) {
-      try { if ((await fetch(url(s, '/api/listings?limit=1'))).ok) return; } catch { /* not up yet */ }
-      await new Promise((r) => setTimeout(r, 200));
-    }
-    throw new Error('test server did not start');
-  })();
+function startAiServer(s, withKey) {
+  return startServer(s.port, { AI_SEARCH_LIMIT_PER_HOUR: String(s.limit), AI_TIMEOUT_MS: '1500',
+    GEMINI_API_KEY: withKey ? KEY : '', GEMINI_API_URL: `http://localhost:${FAKE_PORT}`, GEMINI_MODEL: 'fake-model' }, ['ignore', 'ignore', 'pipe'])
+    .then((child) => { child.stderr.on('data', (d) => { stderr += d; }); });
 }
 
 async function ask(s, query, over = {}) {
@@ -63,9 +51,9 @@ async function ask(s, query, over = {}) {
 }
 const get = async (s, p) => { const r = await fetch(url(s, p)); const text = await r.text(); return { status: r.status, text, json: JSON.parse(text) }; };
 
-test.before(async () => { await startFake(); await Promise.all([startServer(WITH_KEY, true), startServer(NO_KEY, false), startServer(LIMITED, true)]); });
+test.before(async () => { await verifyTestDatabase(); await startFake(); await Promise.all([startAiServer(WITH_KEY, true), startAiServer(NO_KEY, false), startAiServer(LIMITED, true)]); });
 test.beforeEach(() => { seen.length = 0; respond = null; });
-test.after(async () => { for (const c of children) c.kill(); fakeServer.close(); await pool.end(); });
+test.after(async () => { fakeServer.close(); await cleanup(); });
 
 // ----- on / off -----
 test('without a key the AI box is off, and normal search still works', async () => {
@@ -216,10 +204,7 @@ test('a slow Gemini times out quickly instead of hanging', async () => {
 
 test('Gemini being unreachable is handled', async () => {
   const dead = { port: 3965, limit: 1000 };
-  const child = spawn(process.execPath, ['server/index.js'], { cwd: path.join(__dirname, '..'), stdio: 'ignore',
-    env: { ...process.env, PORT: '3965', GEMINI_API_KEY: KEY, GEMINI_API_URL: 'http://localhost:3999', AI_TIMEOUT_MS: '1500' } });
-  children.push(child);
-  for (let i = 0; i < 50; i++) { try { if ((await fetch(url(dead, '/api/listings?limit=1'))).ok) break; } catch { /* wait */ } await new Promise((r) => setTimeout(r, 200)); }
+  await startServer(3965, { GEMINI_API_KEY: KEY, GEMINI_API_URL: 'http://localhost:3999', AI_TIMEOUT_MS: '1500' });
   const r = await ask(dead, 'cheap room');
   assert.strictEqual(r.status, 502);
 });

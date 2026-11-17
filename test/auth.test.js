@@ -1,13 +1,12 @@
-// Auth and contact-privacy checks. Needs the server and database running (npm run dev, npm run db:up, npm run seed).
-// Run with: npm test. Test accounts use @example.test emails and are deleted at the end.
+// Auth and contact-privacy checks. Needs the TEST database set up and seeded (README.md, "Testing"). Starts its own server on port 3957.
+// Test accounts have @example.test emails containing this run's unique id, and only those are deleted at the end.
 const test = require('node:test');
 const assert = require('node:assert');
 const crypto = require('crypto');
 const bcrypt = require('bcrypt');
-const pool = require('../server/db');
+const { pool, RUN: run, verifyTestDatabase, trackSession, startServer, cleanup } = require('../test-support/testdb');
 
-const BASE = process.env.TEST_URL || 'http://localhost:3000';
-const run = Date.now();
+const BASE = 'http://localhost:3957';
 let n = 0;
 const uniqueEmail = () => `student-${run}-${++n}@example.test`;
 const PASSWORD = 'correct-horse-1';
@@ -32,10 +31,8 @@ function browser() {
 }
 const goodUser = (email = uniqueEmail()) => ({ name: 'Test Student', email, phone: '0712 345 678', password: PASSWORD });
 
-test.after(async () => {
-  await pool.query("DELETE FROM users WHERE email LIKE '%@example.test'");   // sessions go with them (ON DELETE CASCADE)
-  await pool.end();
-});
+test.before(async () => { await verifyTestDatabase(); await startServer(3957); });
+test.after(cleanup);
 
 test('registration validates every field', async () => {
   const r = await browser().post('/api/auth/register', { name: 'A', email: 'nope', phone: '123', password: 'short' });
@@ -128,6 +125,7 @@ test('contact is not available for hidden listings or bad ids', async () => {
 test('an admin session is not allowed to use the student contact endpoint', async () => {
   const [[admin]] = await pool.query("SELECT id FROM users WHERE role = 'admin' LIMIT 1");
   const token = crypto.randomBytes(32).toString('hex');
+  trackSession(token);   // this run's own session row: removed in cleanup
   await pool.query("INSERT INTO sessions (token_hash, csrf_token, user_id, expires_at) VALUES (?, ?, ?, DATE_ADD(NOW(), INTERVAL 1 HOUR))",
     [crypto.createHash('sha256').update(token).digest('hex'), crypto.randomBytes(32).toString('hex'), admin.id]);
   const b = browser(); b.setCookie('cn_session=' + token);

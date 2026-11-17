@@ -19,7 +19,9 @@ function showServerErrors(form, errors) {
 }
 function goNext(user) {
   const next = safeNext(new URLSearchParams(location.search).get('next'));
-  location.href = next === '/' && user.role === 'admin' ? '/admin/dashboard.html' : next;
+  location.href = user.role === 'admin' && (next === '/' || next === '/admin/')
+  ? '/admin/dashboard.html'
+  : next;
 }
 function finish(form, user) {
   write('cn_user', user);

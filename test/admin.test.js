@@ -1,20 +1,17 @@
 // Admin checks: login, protection, CSRF, moderation workflow, photo access and deletion cleanup.
-// Needs the database running with the seeded admin (npm run db:up, npm run seed). Starts its own server on port 3953
-// with a temporary uploads folder. Test listings have titles starting "TEST-" and are deleted at the end.
+// Needs the TEST database set up and seeded with the admin (README.md, "Testing"). Starts its own server on port 3953 with the run's
+// temporary uploads folder. Test listings are titled "TEST-<run id> ...", test accounts contain the run id; only those (and the
+// session rows this run inserted or created by logging in) are deleted at the end.
 const test = require('node:test');
 const assert = require('node:assert');
 const crypto = require('crypto');
 const fs = require('fs');
-const os = require('os');
 const path = require('path');
-const { spawn } = require('child_process');
-const pool = require('../server/db');
+const { pool, RUN: run, UPLOADS, verifyTestDatabase, trackSession, startServer, cleanup } = require('../test-support/testdb');
 
 const PORT = 3953;
 const BASE = `http://localhost:${PORT}`;
-const UPLOADS = fs.mkdtempSync(path.join(os.tmpdir(), 'campusnest-admin-'));
-const run = Date.now();
-let child, adminId;
+let adminId;
 
 const PNG = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==', 'base64');
 const JPG = Buffer.from('/9j/4AAQSkZJRgABAQEASABIAAD/2wBDAP//////////////////////////////////////////////////////////////////////////////////////wgALCAABAAEBAREA/8QAFBABAAAAAAAAAAAAAAAAAAAAAP/aAAgBAQABPxA=', 'base64');
@@ -44,6 +41,7 @@ function browser({ cookie = '', csrf = '', origin } = {}) {
 // Make a logged-in session straight in the database (fast, no password needed).
 async function sessionFor(userId) {
   const token = crypto.randomBytes(32).toString('hex'), csrf = crypto.randomBytes(32).toString('hex');
+  trackSession(token);
   await pool.query('INSERT INTO sessions (token_hash, csrf_token, user_id, expires_at) VALUES (?, ?, ?, DATE_ADD(NOW(), INTERVAL 1 HOUR))', [sha(token), csrf, userId]);
   return { cookie: 'cn_session=' + token, csrf };
 }
@@ -72,24 +70,11 @@ const imagePaths = async (id) => (await pool.query('SELECT file_path FROM listin
 const rowCount = async (table, col, id) => (await pool.query(`SELECT COUNT(*) AS n FROM ${table} WHERE ${col} = ?`, [id]))[0][0].n;
 
 test.before(async () => {
+  await verifyTestDatabase();
   [[{ id: adminId }]] = await pool.query("SELECT id FROM users WHERE role = 'admin' LIMIT 1");
-  child = spawn(process.execPath, ['server/index.js'], {
-    cwd: path.join(__dirname, '..'),
-    env: { ...process.env, PORT: String(PORT), UPLOAD_DIR: UPLOADS, SUBMIT_LIMIT_PER_HOUR: '1000' }, stdio: 'ignore' });
-  for (let i = 0; i < 50; i++) {
-    try { if ((await fetch(BASE + '/api/listings?limit=1')).ok) return; } catch { /* not up yet */ }
-    await new Promise((r) => setTimeout(r, 200));
-  }
-  throw new Error('test server did not start');
+  await startServer(PORT, { SUBMIT_LIMIT_PER_HOUR: '1000' });
 });
-test.after(async () => {
-  child.kill();
-  await pool.query("DELETE FROM listings WHERE title LIKE 'TEST-%'");
-  await pool.query("DELETE FROM users WHERE email LIKE '%@example.test'");
-  await pool.query('DELETE FROM sessions WHERE expires_at < NOW() OR user_id NOT IN (SELECT id FROM users)');
-  fs.rmSync(UPLOADS, { recursive: true, force: true });
-  await pool.end();
-});
+test.after(cleanup);   // no global session cleanup: only the sessions tracked by this run are removed
 
 // ---------- login ----------
 test('admin login with the seeded account works and starts a short, safe session', async (t) => {
@@ -97,6 +82,7 @@ test('admin login with the seeded account works and starts a short, safe session
   const b = browser();
   const r = await b.post('/api/auth/admin/login', { email: process.env.ADMIN_EMAIL.toUpperCase(), password: process.env.ADMIN_PASSWORD });
   assert.strictEqual(r.status, 200, r.text);
+  trackSession(b.cookie.split('=')[1]);   // the session this login created
   assert.strictEqual(r.json.user.role, 'admin');
   assert.match(r.json.csrfToken, /^[0-9a-f]{64}$/);
   assert.ok(!/password|hash/i.test(r.text));

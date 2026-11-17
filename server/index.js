@@ -41,4 +41,10 @@ app.use((err, req, res, next) => {
 });
 
 const port = process.env.PORT || 3000;
-app.listen(port, () => console.log(`http://localhost:${port}`));
+app.listen(port, (err) => {
+  // Express 5 passes a listen failure (such as the port being in use) to this callback.
+  if (err) { console.error('Could not start the server:', err.message); process.exit(1); }
+  console.log(`http://localhost:${port}`);
+  // Only when started by the test helper (it opens a private message channel): tell it this exact process is listening.
+  if (process.send) process.send({ type: 'campusnest-ready', port: Number(port), pid: process.pid });
+});
