@@ -2,7 +2,7 @@
 // Listings, accounts, favourites and moderation live in the database (see /api). The only thing kept in this browser's
 // localStorage is a saved copy of the logged-in user's name, so the header can draw without waiting for the server.
 
-const ROOM_TYPES = { single: 'Single room', bedsit: 'Bedsit', one_bedroom: 'One bedroom', shared: 'Shared room', hostel: 'Hostel' };
+const ROOM_TYPES = { single: 'Single room', bedsit: 'Bedsitter', one_bedroom: 'One bedroom', shared: 'Shared room', hostel: 'Hostel' };
 const AMENITIES = ['Wi-Fi', 'Water 24/7', 'Security guard', 'Fenced compound', 'Parking', 'Furnished', 'Own bathroom', 'Kitchen', 'Backup power', 'Near matatu stage'];
 
 // The seeded demo student (created by db/seed.js in development), used by the "Log in as demo student" button.
