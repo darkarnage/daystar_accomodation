@@ -17,11 +17,24 @@ CampusNest is an independent project and is not run by the university. It is a u
 7. [Environment configuration](#environment-configuration)
 8. [Seed the database](#seed-the-database)
 9. [Run the application](#run-the-application)
-10. [Demo accounts](#demo-accounts)
+10. [Accounts and first use](#accounts-and-first-use)
 11. [Testing](#testing)
 12. [Project structure](#project-structure)
 13. [Troubleshooting](#troubleshooting)
 14. [Starting over, backups and security notes](#starting-over-backups-and-security-notes)
+
+## Quick start for a new group member
+
+Everyone on the team runs **their own copy** of CampusNest with **their own local XAMPP database and their own passwords**. Nobody shares a database, a `.env` file or credentials, and `.env` is never committed to Git (it is listed in `.gitignore`). The steps are explained in full in the sections below:
+
+1. Install Node.js 20.10 or newer and XAMPP, then `git clone` the repository and run `npm install` ([Get the code](#get-the-code)).
+2. Start **MySQL** (MariaDB) in the XAMPP Control Panel ([Install XAMPP](#install-xampp-and-start-mariadb)).
+3. Create your own `daystar_accommodation` database and `daystar_app` user, and import `db/schema.sql` ([Database setup](#database-setup)).
+4. Copy `.env.example` to `.env` and fill in **your** database password and **your** admin email and password ([Environment configuration](#environment-configuration)).
+5. Run `npm run seed` to create the amenities and your admin account ([Seed the database](#seed-the-database)).
+6. Run `npm run dev` and open <http://localhost:3000> ([Run the application](#run-the-application)).
+
+A fresh database has **no listings and no student accounts**: add your own through the site, or load optional sample data (see [Optional sample data](#optional-sample-data)).
 
 ## Features
 
@@ -33,6 +46,7 @@ CampusNest is an independent project and is not run by the university. It is a u
 
 **For property owners**
 - List a property with a form: no account needed. Add up to 5 JPG or PNG photos (2 MB each) and your contact details.
+- A contact form (`/contact.html`) saves visitors' messages in the database (`contact_messages`). Nothing is emailed and there is no admin inbox yet: read them in phpMyAdmin.
 - Every submission starts as *pending*. It appears publicly only after an admin approves it, and only while it is marked available.
 
 **For the admin**
@@ -45,7 +59,7 @@ CampusNest is an independent project and is not run by the university. It is a u
 - Changes to the admin area and to favourites need a CSRF token. Failed logins, property submissions and AI searches are rate limited.
 - Photos of listings that are not public are only served to the admin. Uploaded files are checked by their real contents, not their names.
 
-The demo listings use **illustrative sample photos** from Pexels. They are labelled "Sample photo" and credited on the *Photo sources* page (`/image-sources.html`). They are not pictures of the listed properties.
+The optional sample listings (see [Optional sample data](#optional-sample-data)) use **illustrative stock photos** from Pexels. They are labelled "Sample photo", credited on `/image-sources.html`, and are not pictures of the listed properties.
 
 ## Technology stack
 
@@ -140,7 +154,7 @@ What this does:
 
 ### Step 2: import the tables
 
-The file `db/schema.sql` creates the seven tables (`users`, `listings`, `listing_images`, `amenities`, `listing_amenities`, `favourites`, `sessions`). It only creates tables and never deletes or empties anything.
+The file `db/schema.sql` creates the eight tables (`users`, `listings`, `listing_images`, `amenities`, `listing_amenities`, `favourites`, `sessions`, `contact_messages`). It only creates tables and never deletes or empties anything.
 
 **phpMyAdmin:** click the `daystar_accommodation` database in the left list, open the **Import** tab, choose the file `db\schema.sql` from the project folder, and click **Import**.
 
@@ -153,7 +167,7 @@ SOURCE db/schema.sql;
 
 ### Step 3: check it worked
 
-In phpMyAdmin the database should now list 7 tables, or in the client run:
+In phpMyAdmin the database should now list 8 tables, or in the client run:
 
 ```sql
 USE daystar_accommodation;
@@ -163,6 +177,16 @@ SHOW TABLES;
 Expected tables: `amenities`, `favourites`, `listing_amenities`, `listing_images`, `listings`, `sessions`, `users`.
 
 If you import `schema.sql` a second time you will see *"table already exists"* errors. That is harmless: nothing is changed.
+
+### Updating an existing database
+
+If your database was created before a feature was added, it may be missing a table. The `db/migrations/` folder has small SQL files for that. They only **create** what is missing (`CREATE TABLE IF NOT EXISTS`): they never drop, empty or change existing tables or rows, and running one twice is harmless. Take a backup first (see [Starting over, backups and security notes](#starting-over-backups-and-security-notes)).
+
+| Migration | Adds | Needed when |
+|---|---|---|
+| `db/migrations/001-contact-messages.sql` | The `contact_messages` table for the contact form | Your database has 7 tables, not 8. Until you run it, sending the contact form shows an error. |
+
+phpMyAdmin: select your database (`daystar_accommodation`, and `daystar_accommodation_test` if you made one), open **Import**, choose the file, click **Import**. Or in the client: `USE daystar_accommodation; SOURCE db/migrations/001-contact-messages.sql;`. A new database made from `db/schema.sql` already has the table.
 
 ## Environment configuration
 
@@ -185,6 +209,7 @@ Save it as plain **UTF-8** text, and make sure the name is exactly `.env` (not `
 | `DB_PASSWORD` | The password you chose in step 1. |
 | `ADMIN_NAME`, `ADMIN_EMAIL`, `ADMIN_PASSWORD` | The one admin account that `npm run seed` creates. The password needs at least 8 characters. The tests also log in with these values, against the test database. |
 | `GEMINI_API_KEY` | Optional. Leave empty to hide the AI search box. |
+| `AI_TIMEOUT_MS` | Optional. How long the server waits for Gemini's response, in milliseconds. `.env.example` sets `15000` (15 seconds); if the line is missing the server uses 8000 (8 seconds). See [AI-assisted search](#run-the-application). |
 | `GEMINI_MODEL`, `AI_SEARCH_LIMIT_PER_HOUR` | Optional AI settings (see `.env.example`). |
 | `NODE_ENV` | Set to `production` only when serving over https. |
 
@@ -198,21 +223,29 @@ With MariaDB running and `.env` filled in:
 npm run seed
 ```
 
-This creates:
-- the 10 amenities (Wi-Fi, Water 24/7, and so on);
-- the **admin account** from `ADMIN_EMAIL` and `ADMIN_PASSWORD` (the password is stored as a bcrypt hash);
-- the **13 demo listings** with their amenities and sample photos (9 public, 1 marked taken, 2 pending, 1 rejected), so you can try every part of the site;
-- a **demo student account** (development only, see [Demo accounts](#demo-accounts)).
+This is the normal first-time setup. It creates only:
+- the **10 amenities** the application needs (Wi-Fi, Water 24/7, and so on);
+- the **first admin account**, from `ADMIN_EMAIL` and `ADMIN_PASSWORD` in your own `.env` (the password is stored only as a bcrypt hash).
 
-Seeding is safe to run again. It never adds the demo listings twice, never changes an existing account, and only refreshes the demo listings' sample-photo paths. Photos uploaded through the form are never touched. Expect output like:
+It creates **no demo accounts and no sample listings**. It is safe to run again: it never changes or deletes an existing user or listing. Expect output like:
 
 ```text
-Listings: 13 demo listings added
-Demo student created: faith@student.daystar.ac.ke (password: demo-password)
 Amenities ready. Admin created: <your admin email>
 ```
 
-Note: the seed never overwrites an existing admin, so changing `ADMIN_PASSWORD` in `.env` later does not change the password of an admin that already exists.
+Notes:
+- The seed never overwrites an existing admin, so changing `ADMIN_PASSWORD` in `.env` later does not change the password of an admin that already exists.
+- There is no admin registration page. The admin is always created this way, from the `.env` on your own computer.
+
+### Optional sample data
+
+Only if you want to look around a site that already has listings (for development or a demonstration):
+
+```powershell
+npm run seed:demo
+```
+
+This is a separate, explicit command. Run `npm run seed` first. It adds 13 sample listings with stock photos (only when the listings table is completely empty) and one sample student, `faith@student.daystar.ac.ke` with the password `demo-password`. The sample student is for development only: the command refuses to run with `NODE_ENV=production`, and the account should never exist on a public site. It never changes or deletes existing users or listings. To remove the sample data again, delete those listings in the admin dashboard.
 
 ## Run the application
 
@@ -236,22 +269,20 @@ Open <http://localhost:3000>. Useful addresses:
 | <http://localhost:3000/register.html> and `/login.html` | Student sign-up and login |
 | <http://localhost:3000/admin/login.html> | Admin login |
 | <http://localhost:3000/api/health> | Should show `{"ok":true,"db":"connected"}` when the database is reachable |
-| <http://localhost:3000/image-sources.html> | Credits for the sample photos |
 
 Stop the server with `Ctrl+C`.
 
-**AI-assisted search (optional).** Put your key in `.env` as `GEMINI_API_KEY=...` and restart the server. A "Describe what you're looking for" box then appears at the top of the browse page. Check <http://localhost:3000/api/ai-search/status>: it should show `{"enabled":true}`. The key stays on the server, and only the visitor's sentence is sent to Google; listings and contact details are never shared. Without a key, the box is hidden and everything else works normally. If Google rejects the default model, set `GEMINI_MODEL` in `.env` to a model your key can use.
+**AI-assisted search (optional).** Put your key in `.env` as `GEMINI_API_KEY=...` and restart the server. A "Describe what you're looking for" box then appears at the top of the browse page. Check <http://localhost:3000/api/ai-search/status>: it should show `{"enabled":true}`. The key stays on the server, and only the visitor's sentence is sent to Google; listings and contact details are never shared. Without a key, the box is hidden and everything else works normally. If Google rejects the default model, set `GEMINI_MODEL` in `.env` to a model your key can use. **Timeout:** `AI_TIMEOUT_MS` in `.env` is how long the server waits for Gemini's response, in milliseconds. `.env.example` sets it to `15000` (15 seconds); if the line is missing from your `.env`, the server waits 8000 milliseconds (8 seconds). If the search sometimes reports "AI search is not available right now" and the server log shows `TimeoutError`, add `AI_TIMEOUT_MS=15000` to your `.env` and restart the server.
 
-## Demo accounts
+## Accounts and first use
 
-| Account | How to log in |
+| Account | How to get it |
 |---|---|
-| **Admin** | <http://localhost:3000/admin/login.html> with the `ADMIN_EMAIL` and `ADMIN_PASSWORD` you put in `.env`. |
-| **Demo student** | `/login.html` (or the "Log in as demo student" button): `faith@student.daystar.ac.ke` with password `demo-password`. This is a **development-only demo account**. It is created by `npm run seed` unless `NODE_ENV=production`, and it should never exist on a public site. |
-| **Your own student** | Register at `/register.html`. |
+| **Admin** | Created by `npm run seed` from your `.env`. Log in at <http://localhost:3000/admin/login.html> with `ADMIN_EMAIL` and `ADMIN_PASSWORD`. |
+| **Student** | Register at `/register.html`, then log in at `/login.html`. |
 | **Property owners** | No account: use `/submit-property.html`. |
 
-Try the full workflow: submit a property as a visitor, log in as admin and approve it, then find it on the browse page as a student.
+Try the full workflow: submit a property as a visitor, log in as admin and approve it, then register as a student and find it on the browse page.
 
 ## Testing
 
@@ -271,7 +302,7 @@ The automated tests write to a database and start their own servers, so they use
    ```
 
    Because `daystar_test` has rights on the test database only, even a mistake in the tests could not reach `daystar_accommodation`.
-2. Import `db/schema.sql` into **`daystar_accommodation_test`** (select that database first in phpMyAdmin, then *Import*; or `USE daystar_accommodation_test; SOURCE db/schema.sql;`). Check that it now has 7 tables.
+2. Import `db/schema.sql` into **`daystar_accommodation_test`** (a test database made earlier needs [the migration](#updating-an-existing-database) instead) (select that database first in phpMyAdmin, then *Import*; or `USE daystar_accommodation_test; SOURCE db/schema.sql;`). Check that it now has 8 tables.
 3. Add these settings to `.env` (see `.env.example`), or set them in the terminal for one session:
 
    | Variable | Value |
@@ -280,7 +311,7 @@ The automated tests write to a database and start their own servers, so they use
    | `TEST_DB_USER`, `TEST_DB_PASSWORD` | `daystar_test` and the password from step 1 |
    | `TEST_DB_HOST`, `TEST_DB_PORT` | Optional. Default `127.0.0.1` and `3306`. The host must be this computer. |
 
-4. Fill the test database with the admin and demo listings the tests expect. This writes to the test database only:
+4. Fill the test database with the amenities, the admin and the sample listings and student that some tests read. This writes to the test database only (it runs both `db/seed.js` and `db/seed-demo.js` against it):
 
    ```powershell
    npm run seed:test
@@ -294,7 +325,7 @@ The automated tests write to a database and start their own servers, so they use
 npm test
 ```
 
-Keep ports **3951 to 3957** and **3961 to 3965** free: the tests start their own servers there, connected to the test database. You do not need to start the application, and the tests never use a server that is already running (so they cannot reach your normal database through one). `TEST_URL` is no longer supported. Run one file with, for example, `node --test test/safenext.test.js`. The summary at the end should show `fail 0`.
+Keep ports **3951 to 3959** and **3961 to 3965** free: the tests start their own servers there, connected to the test database. You do not need to start the application, and the tests never use a server that is already running (so they cannot reach your normal database through one). `TEST_URL` is no longer supported. Run one file with, for example, `node --test test/safenext.test.js`. The summary at the end should show `fail 0`.
 
 ### What the tests can change
 
@@ -303,7 +334,7 @@ Keep ports **3951 to 3957** and **3961 to 3965** free: the tests start their own
 - **Deleted at the end:** only the listings and student accounts that contain that id (their photos rows, favourites and sessions go with them through the foreign keys), the login-session rows the run inserted itself or created by logging in, and its temporary uploads folder. Nothing else is ever deleted, so other `TEST-` listings or `@example.test` accounts are left alone.
 - **Changed during a test, then put back:** a few tests change the status or availability of their own `TEST-<id>` listings. One test temporarily adds a database rule (a CHECK constraint named `chk_force_fail_<id>`) to the `listings` table of the test database to prove that photos are removed when saving fails. It is skipped if a rule with that name already exists, and only a rule the test itself added is dropped.
 - **Files.** Uploaded test photos go to a new folder made by the operating system under the temp directory (`campusnest-test-...`), never to the project's `uploads/`. Before deleting it, the tests check it really is such a folder. The tests never write to `public/`.
-- **Not touched:** the demo listings, the admin account and the demo student are only read.
+- **Not touched:** the sample listings, the admin account and the sample student are only read.
 
 ### What this does not protect
 
@@ -317,13 +348,15 @@ Keep ports **3951 to 3957** and **3961 to 3965** free: the tests start their own
 README.md             This guide
 CLAUDE.md             Project rules for contributors and AI assistants
 SCAFFOLD.md           Short map of the folders
-package.json          Dependencies and npm scripts (start, dev, seed, test)
+package.json          Dependencies and npm scripts (start, dev, seed, seed:demo, seed:test, test)
 .env.example          Template for your private .env file (placeholders only)
 
 db/
-  schema.sql          The 7 tables (import once into daystar_accommodation)
-  seed.js             Creates amenities, the admin, the demo student and demo listings
-  demo-listings.js    The 13 demo listings used by the seed
+  schema.sql          The 8 tables (import once into daystar_accommodation)
+  migrations/         Safe, one-time SQL updates for databases that already exist (see below)
+  seed.js             `npm run seed`: creates the amenities and the first admin (from .env)
+  seed-demo.js        `npm run seed:demo`: optional sample listings and sample student
+  demo-listings.js    The 13 sample listings used by seed-demo.js
 
 server/
   index.js            Express app: wires routes and middleware together
@@ -334,10 +367,10 @@ server/
   middleware/         Login cookie, roles, CSRF, admin pages guard, photo upload rules
 
 public/               The website (served by Express)
-  *.html              Public pages (home, browse, property, login, register, submit, favourites, about, contact, photo sources)
+  *.html              Public pages (home, browse, property, login, register, submit, favourites, about, contact; image-sources.html holds the photo credits)
   admin/              Admin pages (login, dashboard, moderation)
   assets/css, js      Styles and page scripts
-  assets/images       Sample photos for the demo listings (full size and a small copy)
+  assets/images       Sample photos for the optional sample listings (full size and a small copy)
   assets/fonts, icons Fonts and the favicon
 
 uploads/              Photos uploaded through the form (not stored in Git)
@@ -360,19 +393,19 @@ design/               Design exports and notes
 | `npm install` fails while building `bcrypt` | Use Node 20.10 or newer (Node 22 is tested). If it still fails, install the **Desktop development with C++** workload from Visual Studio Build Tools and try again. |
 | Admin login fails | The admin is created only by `npm run seed`, from `ADMIN_EMAIL` and `ADMIN_PASSWORD` in `.env`. An admin that already exists keeps its original password. |
 | The AI box does not appear | `GEMINI_API_KEY` is empty or the server was not restarted after adding it. Check `/api/ai-search/status`. |
-| Demo listings show no photos after updating the code | Run `npm run seed` once: it refreshes the demo listings' photo paths. |
+| The site shows no listings | A new database starts empty. Submit a property at `/submit-property.html` and approve it in the admin dashboard, or load the optional sample data with `npm run seed:demo`. |
 | `npm test`: `Refusing to run the tests` | The test database is not configured, or is unsafe. Read the message and follow [Testing](#testing). |
-| `npm test`: a port is already in use | Stop any server using ports 3951 to 3957 or 3961 to 3965. |
+| `npm test`: a port is already in use | Stop any server using ports 3951 to 3959 or 3961 to 3965. |
 
 ## Starting over, backups and security notes
 
 **Back up before experimenting.** In phpMyAdmin, select the database, open the **Export** tab and save the `.sql` file. Photos uploaded through the form are in the `uploads/` folder, so copy that folder too.
 
-**Starting over (this permanently deletes all data in the database).** Only do this if you really want an empty database. In phpMyAdmin, select `daystar_accommodation`, open **Operations**, and use *Drop the database*; or run `DROP DATABASE daystar_accommodation;`. Then repeat steps 1 and 2 of [Database setup](#database-setup) and run `npm run seed`. Photos in `uploads/` are not deleted by this, so remove them yourself if you want them gone.
+**Starting over (this permanently deletes all data in the database).** Only do this if you really want an empty database. In phpMyAdmin, select `daystar_accommodation`, open **Operations**, and use *Drop the database*; or run `DROP DATABASE daystar_accommodation;`. Then repeat steps 1 and 2 of [Database setup](#database-setup) and run `npm run seed` (and `npm run seed:demo` if you want the sample data). Photos in `uploads/` are not deleted by this, so remove them yourself if you want them gone.
 
 **Security notes**
 - `.env` holds passwords: never commit or share it. The `.gitignore` already excludes it, along with `node_modules/` and uploaded photos.
 - The application connects as `daystar_app`, which only has rights on the `daystar_accommodation` database. It never uses `root`.
 - Keep MariaDB reachable from your own computer only (see `bind-address` above) and do not open port 3306 in a firewall.
-- Before putting the site on the internet: serve it over https, set `NODE_ENV=production` in `.env` (this marks the login cookie Secure, and `npm run seed` then skips the demo student account), and use a strong admin password.
+- Before putting the site on the internet: serve it over https, set `NODE_ENV=production` in `.env` (this marks the login cookie Secure, and `npm run seed:demo` then refuses to run), and use a strong admin password.
 - The project rules (access control, uploads, CSRF, AI search) are listed in `CLAUDE.md`.

@@ -34,19 +34,62 @@ const chipText = {
 let shown = [];   // listings currently matching
 let latest = 0;   // numbers each request so a slow, old answer can never replace a newer one
 
+// The active filters as one object, and the API query string for them (also used to test "what if I relax this?").
+const stateFromForm = () => {
+  const f = Object.fromEntries(new FormData(form));
+  return { q: (f.q || '').trim(), type: f.type || '', maxRent: Number(f.maxRent) > 0 ? f.maxRent : '', maxDist: Number(f.maxDist) > 0 ? f.maxDist : '',
+    amenity: $$('[name=amenity]:checked').map(b => b.value), sort: sortSel.value };
+};
+function queryFor(st, extra = {}) {
+  const api = new URLSearchParams();
+  if (st.q) api.set('q', st.q);
+  if (st.type) api.set('type', st.type);
+  if (st.maxRent) api.set('maxRent', st.maxRent);
+  if (st.maxDist) api.set('maxDist', st.maxDist);
+  st.amenity.forEach(a => api.append('amenity', a));
+  if (st.sort) api.set('sort', st.sort);
+  for (const [k, v] of Object.entries(extra)) api.set(k, v);
+  return api.toString();
+}
+
+// Specific ways to loosen the active filters, one change each. Only the active filters produce an option.
+const DIST_STEPS = [1, 2, 5, 10];
+function relaxOptions(st) {
+  const out = [];
+  if (st.q) out.push({ label: `Remove the keyword “${st.q}”`, next: { ...st, q: '' } });
+  if (st.type) out.push({ label: `Show all room types, not just ${ROOM_TYPES[st.type]}`, next: { ...st, type: '' } });
+  if (st.maxRent) out.push({ label: `Remove the rent limit (now up to ${kes(st.maxRent)})`, next: { ...st, maxRent: '' } });
+  if (st.maxDist) {
+    const wider = DIST_STEPS.find(d => d > Number(st.maxDist));
+    out.push(wider ? { label: `Widen the distance from ${st.maxDist} km to ${wider} km`, next: { ...st, maxDist: String(wider) } }
+                   : { label: `Remove the distance limit (now within ${st.maxDist} km)`, next: { ...st, maxDist: '' } });
+  }
+  st.amenity.forEach(a => out.push({ label: `Drop the “${a}” requirement`, next: { ...st, amenity: st.amenity.filter(x => x !== a) } }));
+  return out;
+}
+let suggestions = [];   // the options currently shown under "No listings match", picked by data-relax="index"
+
+// After a search finds nothing: ask the normal search how many listings each single relaxation would find,
+// and suggest only the ones that find something (best first).
+async function showSuggestions(st, mine) {
+  const box = $('#suggest');
+  const options = relaxOptions(st);
+  if (!box || !options.length) return;
+  const counts = await Promise.all(options.map(o => apiGet('/api/listings?' + queryFor(o.next)).then(d => d.count).catch(() => 0)));
+  if (mine !== latest) return;   // the filters changed while we were asking
+  suggestions = options.map((o, i) => ({ ...o, count: counts[i] })).filter(o => o.count > 0).sort((x, y) => y.count - x.count).slice(0, 4);
+  box.innerHTML = suggestions.length
+    ? `<p><b>You could try:</b></p><div class="suggest-list">${suggestions.map((o, i) =>
+        `<button class="btn btn-secondary btn-sm" type="button" data-relax="${i}">${esc(o.label)} <span class="muted">(${o.count} ${o.count === 1 ? 'listing' : 'listings'})</span></button>`).join('')}</div>`
+    : '<p class="muted">Loosening any single filter still finds nothing, so try clearing all filters.</p>';
+}
+
 // Search, filter and sort happen in SQL: this just sends the form values to GET /api/listings.
 async function render() {
-  const f = Object.fromEntries(new FormData(form));
-  const wanted = $$('[name=amenity]:checked').map(b => b.value);
-  const s = sortSel.value;
-
-  const api = new URLSearchParams();
-  if ((f.q || '').trim()) api.set('q', f.q.trim());
-  if (f.type) api.set('type', f.type);
-  if (Number(f.maxRent) > 0) api.set('maxRent', f.maxRent);
-  if (Number(f.maxDist) > 0) api.set('maxDist', f.maxDist);
-  wanted.forEach(a => api.append('amenity', a));
-  if (s) api.set('sort', s);
+  const st = stateFromForm();
+  const f = { q: st.q, type: st.type, maxRent: st.maxRent, maxDist: st.maxDist };
+  const wanted = st.amenity;
+  const api = queryFor(st);
 
   // Active-filter chips (click one to remove it).
   const chips = ['q', 'type', 'maxRent', 'maxDist'].filter(k => f[k] && String(f[k]).trim())
@@ -58,7 +101,7 @@ async function render() {
   const p = new URLSearchParams();
   for (const [k, v] of Object.entries(f)) if (v && k !== 'amenity') p.set(k, v);
   wanted.forEach(a => p.append('amenity', a));
-  if (s) p.set('sort', s);
+  if (st.sort) p.set('sort', st.sort);
   history.replaceState(null, '', p.toString() ? '?' + p : location.pathname);
 
   const mine = ++latest;
@@ -76,7 +119,8 @@ async function render() {
   $('#count').textContent = shown.length + (shown.length === 1 ? ' listing found' : ' listings found');
   $('#apply').textContent = shown.length ? `Show ${shown.length} ${shown.length === 1 ? 'result' : 'results'}` : 'No results';
   $('#results').innerHTML = shown.length ? shown.map(l => cardHTML(l)).join('') :
-    `<div class="state">${icon('search', 32)}<h3>No listings match your filters</h3><p class="muted">Try a higher rent, a longer distance, or fewer amenities.</p><button class="btn btn-secondary" type="button" id="empty-clear">Clear all filters</button></div>`;
+    `<div class="state">${icon('search', 32)}<h3>No listings match your filters</h3><p class="muted">Try a higher rent, a longer distance, or fewer amenities.</p><div id="suggest" class="suggest" aria-live="polite"></div><button class="btn btn-secondary" type="button" id="empty-clear">Clear all filters</button></div>`;
+  if (!shown.length) await showSuggestions(st, mine);
 }
 
 // Typing in the search box waits a moment so we do not send a request for every key press.
@@ -85,12 +129,15 @@ form.addEventListener('input', () => { clearAiNote(); render(); });
 // The search box sits outside the <form> (it is linked with form="filters"), so its typing is listened to separately.
 $('#q').addEventListener('input', () => { clearAiNote(); clearTimeout(timer); timer = setTimeout(render, 250); });
 form.addEventListener('submit', e => e.preventDefault());
-form.addEventListener('reset', () => { clearAiNote(); setTimeout(render); });
+let applying = false;   // true while applyAiFilters() resets the form itself: that reset must not start its own extra search
+form.addEventListener('reset', () => { if (applying) return; clearAiNote(); setTimeout(render); });
 sortSel.addEventListener('change', render);
 
 // Chips and the empty-state button remove filters.
 document.addEventListener('click', e => {
   if (e.target.closest('#retry')) return render();
+  const relax = e.target.closest('[data-relax]');
+  if (relax) { const o = suggestions[Number(relax.dataset.relax)]; if (o) { clearAiNote(); applyAiFilters(o.next); } return; }
   const chip = e.target.closest('[data-clear], [data-amenity], #empty-clear');
   if (!chip) return;
   if (chip.dataset.amenity) { const box = $(`[name=amenity][value="${CSS.escape(chip.dataset.amenity)}"]`); if (box) box.checked = false; }
@@ -124,7 +171,7 @@ apiGet('/api/ai-search/status').then(s => { if (s?.enabled) aiBox.hidden = false
 
 // Fill the filter form from the filters the server sent back, then search.
 function applyAiFilters(f) {
-  form.reset();                         // start from a clean slate
+  applying = true; form.reset(); applying = false;   // start from a clean slate
   sortSel.value = f.sort || '';
   $('#q').value = f.q || '';
   form.elements.type.value = f.type || '';
@@ -156,7 +203,17 @@ $('#ai-form').addEventListener('submit', async e => {
     return;
   }
   await applyAiFilters(data.filters);
-  aiNote.innerHTML = `<b>Showing:</b> ${data.understood.map(t => `<span class="ai-chip">${esc(t)}</span>`).join(' ')} <span class="muted small">Change them with the filters below.</span>`;
+  // A keyword is the most fragile filter (it must appear in the title, area or description). If it is the reason
+  // nothing was found, search again without it and keep every other filter; if that still finds nothing, undo.
+  let dropped = '';
+  if (data.filters.q && !shown.length) {
+    await applyAiFilters({ ...data.filters, q: '' });
+    if (shown.length) dropped = data.filters.q; else await applyAiFilters(data.filters);
+  }
+  const chips = data.understood.filter(t => !dropped || t !== `“${dropped}”`);
+  aiNote.innerHTML = `<b>Showing:</b> ${chips.map(t => `<span class="ai-chip">${esc(t)}</span>`).join(' ')}` +
+    (dropped ? ` <span class="muted small">Nothing matched the keyword “${esc(dropped)}”, so I searched without it.</span>` : '') +
+    ` <span class="muted small">Change them with the filters below.</span>`;
   aiNote.scrollIntoView({ behavior: 'smooth', block: 'start' });   // the note and the results below it
 });
 

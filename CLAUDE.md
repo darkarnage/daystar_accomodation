@@ -20,6 +20,7 @@ Student (browse, favourites, sees owner contact), Admin (approves, rejects and d
 - Photos of listings that are not public (pending, rejected, taken) are only served to a logged-in admin (`GET /uploads/:name` checks the listing).
 - Favourites belong to one student and live in the `favourites` table (`GET /api/favourites`, `PUT` / `DELETE /api/favourites/:listingId`). Every query uses `req.user.id` from the session, never an id sent by the browser, and changes need the CSRF token. Only public listings are returned. The browser must never store favourites (no localStorage): it keeps an in-memory copy for the logged-in student and reloads it from the server on every page.
 - AI search (optional extra, browse page): `POST /api/ai-search` sends only the visitor's sentence to Gemini (key in `.env`, server-side only) and gets back filters. Gemini never sees listings or contact details and never writes SQL; its answer is checked against fixed lists and ranges, then the browser runs the normal search. With no key the AI box is hidden and everything else works. Only `server/gemini.js` talks to Google.
+- Contact form: `POST /api/contact` (public, no login). Same-origin check (Origin / Sec-Fetch-Site) instead of the session CSRF token, per-IP rate limit, validated server-side, saved to `contact_messages` with `?` placeholders. Messages are only stored: nothing is emailed, and there is no admin inbox yet. Schema changes for existing databases go in `db/migrations/` as non-destructive SQL.
 - Validate input on every API endpoint (plain checks, no validation library).
 - SQL: always `?` placeholders, never string-built queries.
 - Deleting a listing (admin): DB rows cascade, but image files do not. Read `file_path` from `listing_images` first, delete rows, then `fs.unlink` each file.
@@ -28,7 +29,7 @@ Student (browse, favourites, sees owner contact), Admin (approves, rejects and d
 - SQL must work on MariaDB 10.4 or newer, which is what XAMPP ships (MariaDB-compatible syntax only, for example `DROP CONSTRAINT`, not MySQL's `DROP CHECK`).
 
 ## Commands
-`npm install`, `npm run seed`, `npm run dev` (http://localhost:3000) or `npm start`, `npm run seed:test`, `npm test` (API checks). Tests only run against a separate test database (`TEST_DB_*` in `.env`, name ends in `_test`, never `DB_NAME`); they start their own servers and delete only records carrying their own run id (`test-support/testdb.js`). There are no other database scripts: start and stop MariaDB in the XAMPP Control Panel.
+`npm install`, `npm run seed` (amenities + first admin only, no demo data), `npm run seed:demo` (optional sample listings/student, never in production), `npm run dev` (http://localhost:3000) or `npm start`, `npm run seed:test`, `npm test` (API checks). Tests only run against a separate test database (`TEST_DB_*` in `.env`, name ends in `_test`, never `DB_NAME`); they start their own servers and delete only records carrying their own run id (`test-support/testdb.js`). There are no other database scripts: start and stop MariaDB in the XAMPP Control Panel.
 
 ## Layout
 See `SCAFFOLD.md`. Designs from Google Stitch go in `design/` and are the reference for the frontend.

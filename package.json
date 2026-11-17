@@ -8,6 +8,7 @@
     "start": "node server/index.js",
     "dev": "node --watch server/index.js",
     "seed": "node db/seed.js",
+    "seed:demo": "node db/seed-demo.js",
     "seed:test": "node test-support/seed.js",
     "test": "node --test --test-concurrency=1"
   },

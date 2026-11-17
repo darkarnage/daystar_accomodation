@@ -10,7 +10,7 @@ const { askGemini, isConfigured, describeError } = require('../gemini');
 
 const ROOM_TYPES = ['single', 'bedsit', 'one_bedroom', 'shared', 'hostel'];
 const SORTS = ['newest', 'rent', 'distance'];
-const ROOM_NAMES = { single: 'Single room', bedsit: 'Bedsit', one_bedroom: 'One bedroom', shared: 'Shared room', hostel: 'Hostel' };
+const ROOM_NAMES = { single: 'Single room', bedsit: 'Bedsitter', one_bedroom: 'One bedroom', shared: 'Shared room', hostel: 'Hostel' };
 
 // Slow down abuse (each request costs money): N requests per hour per IP, kept in memory.
 const LIMIT = Number(process.env.AI_SEARCH_LIMIT_PER_HOUR) || 30;

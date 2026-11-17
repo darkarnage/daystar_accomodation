@@ -41,15 +41,6 @@ const busy = (button, on) => { button.disabled = on; button.classList.toggle('is
 const msg = new URLSearchParams(location.search).get('msg');
 if (msg === 'fav' && $('#msg')) $('#msg').innerHTML = '<div class="alert">Log in as a student to save favourites.</div>';
 
-// Demo quick-fill buttons
-$$('[data-demo]').forEach(b => b.addEventListener('click', () => {
-  const f = $('form');
-  f.elements.email.value = DEMO_USERS[b.dataset.demo].email;
-  f.elements.password.value = 'demo-password';   // the demo student is created by db/seed.js (development only)
-  b.classList.add('is-loading');
-  f.requestSubmit();
-}));
-
 // ----- student login (real) -----
 $('#login-form')?.addEventListener('submit', async e => {
   e.preventDefault();
@@ -59,10 +50,10 @@ $('#login-form')?.addEventListener('submit', async e => {
     setErr(f, 'email', EMAIL_RE.test(email) ? '' : 'Enter a valid email address.'),
     setErr(f, 'password', f.elements.password.value ? '' : 'Enter your password.'),
   ].every(Boolean);
-  if (!ok) { $$('[data-demo]').forEach(b => b.classList.remove('is-loading')); return; }
+  if (!ok) return;
   busy(button, true);
   const { status, data } = await postJson('/api/auth/login', { email, password: f.elements.password.value });
-  busy(button, false); $$('[data-demo]').forEach(b => b.classList.remove('is-loading'));
+  busy(button, false);
   if (status === 200) return finish(f, data.user);
   setErr(f, 'password',
     status === 401 ? 'Incorrect email or password.' :

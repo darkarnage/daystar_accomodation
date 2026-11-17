@@ -5,8 +5,6 @@
 const ROOM_TYPES = { single: 'Single room', bedsit: 'Bedsitter', one_bedroom: 'One bedroom', shared: 'Shared room', hostel: 'Hostel' };
 const AMENITIES = ['Wi-Fi', 'Water 24/7', 'Security guard', 'Fenced compound', 'Parking', 'Furnished', 'Own bathroom', 'Kitchen', 'Backup power', 'Near matatu stage'];
 
-// The seeded demo student (created by db/seed.js in development), used by the "Log in as demo student" button.
-const DEMO_USERS = { student: { email: 'faith@student.daystar.ac.ke' } };
 
 // ---------- storage ----------
 const read = (k, fallback) => { try { return JSON.parse(localStorage.getItem(k)) ?? fallback; } catch { return fallback; } };
@@ -25,7 +23,6 @@ let csrfToken = '';       // proves a change comes from our own page (sent in th
 // Logging out ends the server session (students) and clears the saved copy of the user.
 async function endSession() { try { await fetch('/api/auth/logout', { method: 'POST' }); } catch { /* server offline: still log out here */ } }
 async function logout() { await endSession(); favIds = new Set(); localStorage.removeItem('cn_user'); location.href = '/'; }
-async function clearSavedData() { await endSession(); favIds = new Set(); localStorage.removeItem('cn_user'); location.href = '/'; }
 // Older versions kept listings, accounts and favourites in this browser. They are not used any more. cn_favs was ONE list
 // shared by everyone who used this browser (the cause of the "I can see another student's favourites" bug), so it is cleared.
 ['cn_listings', 'cn_users', 'cn_favs'].forEach(k => localStorage.removeItem(k));
@@ -229,10 +226,9 @@ function renderChrome() {
       <p>Find a place to call home.</p></div>
     <nav class="foot-links" aria-label="Footer"><a href="/browse.html">Browse</a><a href="/submit-property.html">List a property</a><a href="/about.html">About</a><a href="/contact.html">Contact</a></nav>
     <p class="foot-small">CampusNest is an independent student accommodation platform, starting with Daystar University, Athi River. It is not run by the university.<br>
-      <a href="/image-sources.html">Photo sources</a> · <a href="/admin/login.html">Admin</a> · <a href="#" id="reset-demo">Clear saved data</a></p></div>`;
+      <a href="/admin/login.html">Admin</a></p></div>`;
 
   $('#logout')?.addEventListener('click', logout);
-  $('#reset-demo')?.addEventListener('click', e => { e.preventDefault(); clearSavedData(); });
 
   if (!header) return;   // pages without the site header (admin login)
 

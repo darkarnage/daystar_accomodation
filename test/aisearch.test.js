@@ -85,6 +85,15 @@ test('a sentence becomes filters that the normal search understands', async () =
   assert.ok(found.json.listings.every((l) => l.roomType === 'single' && l.distance <= 2 && l.amenities.includes('Wi-Fi')));
 });
 
+test('a bedsitter is shown as "Bedsitter" while the stored and API value stays "bedsit"', async () => {
+  respond = () => ok({ ...empty, roomType: 'bedsit', maxRent: 6000, maxDistanceKm: 2, amenities: ['Wi-Fi'] });
+  const r = await ask(WITH_KEY, 'Find a bedsitter under KES 6000 within 2 km of campus with Wi-Fi');
+  assert.deepStrictEqual(r.json.filters, { type: 'bedsit', maxRent: 6000, maxDist: 2, amenity: ['Wi-Fi'] });
+  assert.deepStrictEqual(r.json.understood, ['Bedsitter', 'Up to KES 6,000', 'Within 2 km', 'Wi-Fi']);
+  assert.strictEqual((await get(WITH_KEY, '/api/listings?type=bedsit')).status, 200, 'the API value is unchanged');
+  assert.strictEqual((await get(WITH_KEY, '/api/listings?type=bedsitter')).status, 400, 'only the internal value is accepted');
+});
+
 test('rent, a place name and extra spaces are understood too', async () => {
   respond = () => ok({ ...empty, maxRent: 8000, keyword: 'Mlolongo' });
   const r = await ask(WITH_KEY, '  a place   in Mlolongo under 8000 ');

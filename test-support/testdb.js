@@ -86,6 +86,9 @@ function startServer(port, extraEnv = {}, stdio = ['ignore', 'ignore', 'ignore']
   });
 }
 
+// Removes only this run's private temporary uploads folder (after checking it).
+function removeUploads() { if (fs.existsSync(UPLOADS)) fs.rmSync(checkUploadsDir(), { recursive: true, force: true }); }
+
 // ---------- 5. cleanup ----------
 // Deletes only: sessions this run inserted, listings titled "TEST-...<RUN>...", students whose email contains
 // <RUN> and ends in @example.test. Then removes the temporary uploads folder and closes the pool.
@@ -97,9 +100,9 @@ async function cleanup() {
     await pool.query('DELETE FROM listings WHERE title LIKE ?', [`TEST-%${RUN}%`]);   // images, amenities, favourites go with them
     await pool.query("DELETE FROM users WHERE role = 'student' AND email LIKE ?", [`%${RUN}%@example.test`]);   // their sessions and favourites go too
   } finally {
-    if (fs.existsSync(UPLOADS)) fs.rmSync(checkUploadsDir(), { recursive: true, force: true });
+    removeUploads();
     await pool.end();
   }
 }
 
-module.exports = { pool, RUN, UPLOADS, TEST_DB, verifyTestDatabase, trackSession, startServer, cleanup };
+module.exports = { pool, RUN, UPLOADS, TEST_DB, verifyTestDatabase, trackSession, startServer, cleanup, removeUploads };
